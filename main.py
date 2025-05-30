@@ -1,12 +1,15 @@
 import sys
-from typing import NoReturn
+from socket import SocketType
+from typing import NoReturn, Optional
 
 from PySide6.QtWidgets import QApplication
 
+from helpers.constants import IP, PORT, TIMEOUT
+from helpers.helpers import open_socket
 from src.gui.main_window import MainWindow
 
 
-def run_app() -> NoReturn:
+def run_app(sock: Optional[SocketType]) -> NoReturn:
     """
     Sets the version of application build,
     creates the app and main window,
@@ -16,10 +19,11 @@ def run_app() -> NoReturn:
     """
     version = '1.0.0'
     app = QApplication([])
-    window = MainWindow(version=version)
+    window = MainWindow(version=version, sock=sock)
     window.show()
     sys.exit(app.exec())
 
 
 if __name__ == '__main__':
-    run_app()
+    sock = open_socket(IP, PORT, TIMEOUT)
+    run_app(sock)
