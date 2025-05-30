@@ -1,4 +1,5 @@
 import socket
+from socket import SocketType
 from typing import Literal
 
 Channels = Literal['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL']
@@ -16,9 +17,7 @@ NAKS = {
 class HVPSv3:
     def __init__(
         self,
-        ip: str,
-        port: str,
-        timeout: float = 5.0,
+        sock: SocketType,
         occupied_channels: tuple[Channels, ...] = (
             'BM',
             'EX',
@@ -29,29 +28,8 @@ class HVPSv3:
             'SL',
         ),
     ) -> None:
-        self.ip = ip
-        self.port = int(port)
-        self.timeout = timeout
-        self.sock = None
+        self.sock = sock
         self.occupied_channels = occupied_channels
-
-    def connect(self) -> None:
-        """Establishes a TCP connection to the HVPS"""
-        try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.settimeout(self.timeout)
-            self.sock.connect((self.ip, self.port))
-            print(f'Connected to HVPS at {self.ip}:{self.port}')
-        except socket.error as e:
-            print(f'Connection error: {e}')
-            self.sock = None
-
-    def disconnect(self) -> None:
-        """Closes the socket connection"""
-        if self.sock:
-            self.sock.close()  # if this doesn't work send "DSCON" command to disconnect.
-            print('Disconnected from HVPS')
-            self.sock = None
 
     def send_query(self, query: str) -> str:
         """Sends a command to the HVPS and returns the response"""
