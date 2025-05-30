@@ -57,4 +57,4 @@ class MainWindow(QMainWindow):
         self.help_menu.addAction(self.open_user_guide_option)
 
     def open_user_guide(self) -> None:
-        print('Opened User Guide')
+        print(get_root_dir())
