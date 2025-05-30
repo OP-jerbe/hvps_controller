@@ -6,4 +6,4 @@ quote-style = "single"
 indent-style = "space"
 
 [lint]
-ignore = []
+ignore = ["F401"]
