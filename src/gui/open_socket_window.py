@@ -15,11 +15,8 @@ from PySide6.QtWidgets import (
 )
 from qt_material import apply_stylesheet
 
+from helpers.constants import IP, PORT, TIMEOUT
 from helpers.helpers import get_root_dir, open_socket
-
-IP: str = '169.254.150.189'
-PORT: str = '49076'
-TIMEOUT: float = 5.0
 
 
 class OpenSocketWindow(QWidget):
@@ -60,7 +57,7 @@ class OpenSocketWindow(QWidget):
         self.ip_entry = QLineEdit(IP)
         self.ip_entry.setValidator(ip_validator)
         self.port_label = QLabel('PORT')
-        self.port_entry = QLineEdit(PORT)
+        self.port_entry = QLineEdit(str(PORT))
         self.port_entry.setValidator(port_validator)
         self.connect_btn = QPushButton('Connect')
         self.connect_btn.clicked.connect(self.handle_open_socket)
