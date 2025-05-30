@@ -22,10 +22,10 @@ from helpers.helpers import get_root_dir, open_socket
 class OpenSocketWindow(QWidget):
     successful = Signal(SocketType)
 
-    def __init__(self) -> None:
+    def __init__(self, sock: Optional[SocketType]) -> None:
         super().__init__()
         self.connection_successful: bool = False
-        self.sock: Optional[SocketType] = None
+        self.sock: Optional[SocketType] = sock
         self.create_gui()
 
     def create_gui(self) -> None:
@@ -61,6 +61,11 @@ class OpenSocketWindow(QWidget):
         self.port_entry.setValidator(port_validator)
         self.connect_btn = QPushButton('Connect')
         self.connect_btn.clicked.connect(self.handle_open_socket)
+        if self.sock:
+            self.ip_entry.setEnabled(False)
+            self.port_entry.setEnabled(False)
+            self.connect_btn.setEnabled(False)
+            self.connect_btn.setText('Connected')
 
         # Set the layout
         main_layout = QVBoxLayout()
