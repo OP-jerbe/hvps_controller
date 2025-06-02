@@ -25,5 +25,6 @@ def run_app(sock: Optional[SocketType]) -> NoReturn:
 
 
 if __name__ == '__main__':
+    # try and connect to the HVPS then run the app.
     sock = open_socket(IP, PORT, TIMEOUT)
     run_app(sock)
