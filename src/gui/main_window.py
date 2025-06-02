@@ -61,6 +61,8 @@ class MainWindow(QMainWindow):
         # Create the QAction objects for the menus
         self.open_socket_window_action = QAction(text='Connect', parent=self)
         self.open_socket_window_action.triggered.connect(self.handle_open_socket_window)
+        self.run_test_action = QAction(text='Run Test', parent=self)
+        self.run_test_action.triggered.connect(self.handle_run_test)
         self.exit_action = QAction(text='Exit', parent=self)
         self.exit_action.triggered.connect(self.handle_exit)
         self.open_user_guide_action = QAction(text='User Guide', parent=self)
@@ -70,6 +72,7 @@ class MainWindow(QMainWindow):
         self.menu_bar = self.menuBar()
         self.file_menu = self.menu_bar.addMenu('File')
         self.file_menu.addAction(self.open_socket_window_action)
+        self.file_menu.addAction(self.run_test_action)
         self.file_menu.addAction(self.exit_action)
         self.help_menu = self.menu_bar.addMenu('Help')
         self.help_menu.addAction(self.open_user_guide_action)
@@ -163,6 +166,9 @@ class MainWindow(QMainWindow):
         """
         self.sock = sock
         self.hvps = HVPSv3(self.sock)
+
+    def handle_run_test(self) -> None:
+        print('Run Test Clicked')
 
     def handle_exit(self) -> None:
         """
