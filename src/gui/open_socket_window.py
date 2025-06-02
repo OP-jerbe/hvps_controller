@@ -61,6 +61,8 @@ class OpenSocketWindow(QWidget):
         self.port_entry.setValidator(port_validator)
         self.connect_btn = QPushButton('Connect')
         self.connect_btn.clicked.connect(self.handle_open_socket)
+
+        # Disable the buttons and entry boxes if there is already a socket connection.
         if self.sock:
             self.ip_entry.setEnabled(False)
             self.port_entry.setEnabled(False)
