@@ -33,23 +33,30 @@ class MainWindow(QMainWindow):
         self.version = version
         self.sock: Optional[SocketType] = sock
         self.hvps: HVPSv3
+        # If there's a socket connection, instantiate the HVPS object
         if self.sock:
             self.hvps = HVPSv3(self.sock)
         self.installEventFilter(self)
         self.create_gui()
 
     def create_gui(self) -> None:
-        window_width = 550
-        window_height = 500
+        window_width = 300
+        window_height = 400
+        button_width = 75
         self.setFixedSize(window_width, window_height)
         root_dir: Path = get_root_dir()
         icon_path: str = str(root_dir / 'assets' / 'hvps_icon.ico')
         self.setWindowIcon(QIcon(icon_path))
-        self.setWindowTitle(f'HVPSv3 Test Controller (v{self.version})')
+        self.setWindowTitle(f'HVPSv3 Tester (v{self.version})')
         apply_stylesheet(self, theme='dark_lightgreen.xml', invert_secondary=True)
         self.setStyleSheet(
             self.styleSheet() + """QLineEdit, QTextEdit {color: lightgreen;}"""
         )
+
+        voltage_regex = QRegularExpression(r'^-?\d{1,5}$')
+        voltage_validator = QRegularExpressionValidator(voltage_regex)
+        current_regex = QRegularExpression(r'^\d{0,1}+\.\d{1,2}$')
+        current_validator = QRegularExpressionValidator(current_regex)
 
         # Create the QAction objects for the menus
         self.open_socket_window_action = QAction(text='Connect', parent=self)
@@ -67,22 +74,73 @@ class MainWindow(QMainWindow):
         self.help_menu = self.menu_bar.addMenu('Help')
         self.help_menu.addAction(self.open_user_guide_action)
 
-        # Create the widgets
-        self.hv_enable_btn = QPushButton('HV Disabled')
+        ##### Create the widgets #####
+        # Create the buttons
+        self.hv_enable_btn = QPushButton('OFF')
         self.hv_enable_btn.setCheckable(True)
+        self.hv_enable_btn.setFixedWidth(button_width)
         self.hv_enable_btn.clicked.connect(self.handle_hv_enable_btn)
-        self.sol_enable_btn = QPushButton('Solenoid Disabled')
+        self.sol_enable_btn = QPushButton('OFF')
         self.sol_enable_btn.setCheckable(True)
+        self.sol_enable_btn.setFixedWidth(button_width)
         self.sol_enable_btn.clicked.connect(self.handle_sol_enable_btn)
 
+        # Create the labels and entry boxes
+        self.hv_btn_label = QLabel('High Voltage')
+        self.sol_btn_label = QLabel('Solenoid Current')
+        self.beam_label = QLabel('Beam')
+        self.ext_label = QLabel('Extractor')
+        self.L1_label = QLabel('Lens 1')
+        self.L2_label = QLabel('Lens 2')
+        self.L3_label = QLabel('Lens 3')
+        self.L4_label = QLabel('Lens 4')
+        self.solenoid_label = QLabel('Solenoid')
+
+        self.beam_entry = QLineEdit()
+        self.beam_entry.setValidator(voltage_validator)
+        self.ext_entry = QLineEdit()
+        self.ext_entry.setValidator(voltage_validator)
+        self.L1_entry = QLineEdit()
+        self.L1_entry.setValidator(voltage_validator)
+        self.L2_entry = QLineEdit()
+        self.L2_entry.setValidator(voltage_validator)
+        self.L3_entry = QLineEdit()
+        self.L3_entry.setValidator(voltage_validator)
+        self.L4_entry = QLineEdit()
+        self.L4_entry.setValidator(voltage_validator)
+        self.solenoid_entry = QLineEdit()
+        self.solenoid_entry.setValidator(current_validator)
+
         # Set the layout
+        btn_layout = QGridLayout()
+        btn_layout.addWidget(self.hv_btn_label, 0, 0, Qt.AlignmentFlag.AlignCenter)
+        btn_layout.addWidget(self.sol_btn_label, 0, 1, Qt.AlignmentFlag.AlignCenter)
+        btn_layout.addWidget(self.hv_enable_btn, 1, 0, Qt.AlignmentFlag.AlignCenter)
+        btn_layout.addWidget(self.sol_enable_btn, 1, 1, Qt.AlignmentFlag.AlignCenter)
 
-        btn_layout = QVBoxLayout()
-        btn_layout.addWidget(self.hv_enable_btn)
-        btn_layout.addWidget(self.sol_enable_btn)
+        label_layout = QVBoxLayout()
+        label_layout.addWidget(self.beam_label)
+        label_layout.addWidget(self.ext_label)
+        label_layout.addWidget(self.L1_label)
+        label_layout.addWidget(self.L2_label)
+        label_layout.addWidget(self.L3_label)
+        label_layout.addWidget(self.L4_label)
+        label_layout.addWidget(self.solenoid_label)
 
-        main_layout = QVBoxLayout()
-        main_layout.addLayout(btn_layout)
+        entry_layout = QVBoxLayout()
+        entry_layout.addWidget(self.beam_entry)
+        entry_layout.addWidget(self.ext_entry)
+        entry_layout.addWidget(self.L1_entry)
+        entry_layout.addWidget(self.L2_entry)
+        entry_layout.addWidget(self.L3_entry)
+        entry_layout.addWidget(self.L4_entry)
+        entry_layout.addWidget(self.solenoid_entry)
+
+        main_layout = QGridLayout()
+        main_layout.addLayout(btn_layout, 0, 0, 1, 2)
+        main_layout.addWidget(QLabel(), 1, 0, 1, 2)
+        main_layout.addLayout(label_layout, 2, 0)
+        main_layout.addLayout(entry_layout, 2, 1)
 
         container = QWidget()
         container.setLayout(main_layout)
@@ -91,8 +149,8 @@ class MainWindow(QMainWindow):
 
     def handle_open_socket_window(self) -> None:
         """
-        Opens a window with `IP` and `PORT` QLineEdits and a `Connect` button.
-        Populate with IP and PORT global variables.
+        Opens a window with `IP` and `PORT` QLineEdits and a `Connect` button,
+        populated with IP and PORT global variables.
         If self.sock is not None, all QWidgets in OpenSocketWindow are disabled.
         """
         self.open_socket_window = OpenSocketWindow(self.sock)
@@ -128,10 +186,10 @@ class MainWindow(QMainWindow):
         """
         if not self.hv_enable_btn.isChecked():
             # self.hvps.disable_high_voltage()
-            self.hv_enable_btn.setText('HV Disabled')
+            self.hv_enable_btn.setText('OFF')
         else:
             # self.hvps.enable_high_voltage()
-            self.hv_enable_btn.setText('HV Enabled')
+            self.hv_enable_btn.setText('ON')
 
     def handle_sol_enable_btn(self) -> None:
         """
@@ -140,7 +198,7 @@ class MainWindow(QMainWindow):
         """
         if not self.sol_enable_btn.isChecked():
             # self.hvps.disable_solenoid_current()
-            self.sol_enable_btn.setText('Solenoid Disabled')
+            self.sol_enable_btn.setText('OFF')
         else:
             # self.hvps.enable_solenoid_current()
-            self.sol_enable_btn.setText('Solenoid Enabled')
+            self.sol_enable_btn.setText('ON')
