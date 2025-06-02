@@ -53,6 +53,14 @@ class MainWindow(QMainWindow):
             self.styleSheet() + """QLineEdit, QTextEdit {color: lightgreen;}"""
         )
 
+        self.beam_setting: str = '0'
+        self.ext_setting: str = '0'
+        self.L1_setting: str = '0'
+        self.L2_setting: str = '0'
+        self.L3_setting: str = '0'
+        self.L4_setting: str = '0'
+        self.sol_setting: str = '0'
+
         voltage_regex = QRegularExpression(r'^-?\d{1,5}$')
         voltage_validator = QRegularExpressionValidator(voltage_regex)
         current_regex = QRegularExpression(r'^\d{0,1}+\.\d{1,2}$')
@@ -99,20 +107,30 @@ class MainWindow(QMainWindow):
         self.L4_label = QLabel('Lens 4')
         self.solenoid_label = QLabel('Solenoid')
 
-        self.beam_entry = QLineEdit()
+        self.beam_entry = QLineEdit(self.beam_setting)
         self.beam_entry.setValidator(voltage_validator)
-        self.ext_entry = QLineEdit()
+        self.ext_entry = QLineEdit(self.ext_setting)
         self.ext_entry.setValidator(voltage_validator)
-        self.L1_entry = QLineEdit()
+        self.L1_entry = QLineEdit(self.L1_setting)
         self.L1_entry.setValidator(voltage_validator)
-        self.L2_entry = QLineEdit()
+        self.L2_entry = QLineEdit(self.L2_setting)
         self.L2_entry.setValidator(voltage_validator)
-        self.L3_entry = QLineEdit()
+        self.L3_entry = QLineEdit(self.L3_setting)
         self.L3_entry.setValidator(voltage_validator)
-        self.L4_entry = QLineEdit()
+        self.L4_entry = QLineEdit(self.L4_setting)
         self.L4_entry.setValidator(voltage_validator)
-        self.solenoid_entry = QLineEdit()
+        self.solenoid_entry = QLineEdit(self.sol_setting)
         self.solenoid_entry.setValidator(current_validator)
+
+        # Group voltage entries
+        self.voltage_entries: dict[QLineEdit, str] = {
+            self.beam_entry: self.beam_setting,
+            self.ext_entry: self.ext_setting,
+            self.L1_entry: self.L1_setting,
+            self.L2_entry: self.L2_setting,
+            self.L3_entry: self.L3_setting,
+            self.L4_entry: self.L4_setting,
+        }
 
         # Set the layout
         btn_layout = QGridLayout()
@@ -196,6 +214,11 @@ class MainWindow(QMainWindow):
         else:
             # self.hvps.enable_high_voltage()
             self.hv_enable_btn.setText('ON')
+            for (line_edit, setting), channel in zip(
+                self.voltage_entries.items(), self.hvps.occupied_channels
+            ):
+                setting = line_edit.text()
+                # self.hvps.set_voltage(channel, setting)
 
     def handle_sol_enable_btn(self) -> None:
         """
@@ -208,3 +231,5 @@ class MainWindow(QMainWindow):
         else:
             # self.hvps.enable_solenoid_current()
             self.sol_enable_btn.setText('ON')
+            self.sol_setting = self.solenoid_entry.text()
+            # self.hvps.set_solenoid_current(self.sol_setting)
