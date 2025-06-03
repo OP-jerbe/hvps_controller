@@ -25,6 +25,7 @@ from helpers.constants import IP, PORT
 from helpers.helpers import close_socket, get_root_dir
 
 from ..hvps.hvps_api import HVPSv3
+from .hvps_test_window import HVPSTestWindow
 from .open_socket_window import OpenSocketWindow
 
 
@@ -41,6 +42,7 @@ class MainWindow(QMainWindow):
             self.hvps = HVPSv3(self.sock)
         self.installEventFilter(self)
         self.open_socket_window: Optional[OpenSocketWindow] = None
+        self.hvps_test_window: Optional[HVPSTestWindow] = None
         self.create_gui()
 
     def create_gui(self) -> None:
@@ -166,7 +168,7 @@ class MainWindow(QMainWindow):
 
         main_layout = QGridLayout()
         main_layout.addLayout(btn_layout, 0, 0, 1, 2)
-        main_layout.addWidget(QLabel(), 1, 0, 1, 2)
+        main_layout.addWidget(QLabel(), 1, 0, 1, 2)  # spacer
         main_layout.addLayout(label_layout, 2, 0)
         main_layout.addLayout(entry_layout, 2, 1)
 
@@ -214,7 +216,20 @@ class MainWindow(QMainWindow):
         self.port = port
 
     def handle_run_test(self) -> None:
-        print('Run Test Clicked')
+        if self.hvps_test_window is None:  # and self.sock is not None:
+            self.hvps_test_window = HVPSTestWindow(sock=self.sock, parent=self)
+            self.hvps_test_window.test_complete.connect(self.handle_hvps_test_complete)
+            self.hvps_test_window.window_closed.connect(
+                self.handle_test_hvps_window_closed
+            )
+            self.hvps_test_window.exec()
+
+    def handle_hvps_test_complete(self) -> None:
+        self.hvps_test_window = None
+        print(f'{self.hvps_test_window = }')
+
+    def handle_test_hvps_window_closed(self) -> None:
+        self.hvps_test_window = None
 
     def handle_exit(self) -> None:
         """
