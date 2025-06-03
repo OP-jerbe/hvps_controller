@@ -15,18 +15,31 @@ from PySide6.QtWidgets import (
 )
 from qt_material import apply_stylesheet
 
-from helpers.constants import IP, PORT, TIMEOUT
+from helpers.constants import TIMEOUT
 from helpers.helpers import get_root_dir, open_socket
 
 
 class OpenSocketWindow(QWidget):
     successful = Signal(SocketType)
+    closed_window = Signal(str, str)
 
-    def __init__(self, sock: Optional[SocketType]) -> None:
-        super().__init__()
+    def __init__(
+        self, sock: Optional[SocketType], ip_str: str, port_str: str, parent=None
+    ) -> None:
+        """
+        Inherits from the QWidget class but sets the window type to Dialog so that the
+        icon appears in the title bar. Inits the connection_successful flag to False.
+        Sets the connection parameters (self.sock, self.ip, and self.port) to the
+        inputs. Creates the gui and sets the focus to the connect button.
+        """
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.Dialog)
         self.connection_successful: bool = False
         self.sock: Optional[SocketType] = sock
+        self.ip: str = ip_str
+        self.port: str = port_str
         self.create_gui()
+        self.connect_btn.setFocus()
 
     def create_gui(self) -> None:
         # Set the window size
@@ -54,10 +67,10 @@ class OpenSocketWindow(QWidget):
 
         # Create the widgets
         self.ip_label = QLabel('IP ADDRESS')
-        self.ip_entry = QLineEdit(IP)
+        self.ip_entry = QLineEdit(self.ip)
         self.ip_entry.setValidator(ip_validator)
         self.port_label = QLabel('PORT')
-        self.port_entry = QLineEdit(str(PORT))
+        self.port_entry = QLineEdit(self.port)
         self.port_entry.setValidator(port_validator)
         self.connect_btn = QPushButton('Connect')
         self.connect_btn.clicked.connect(self.handle_open_socket)
@@ -83,11 +96,19 @@ class OpenSocketWindow(QWidget):
         self.setLayout(main_layout)
 
     def handle_open_socket(self) -> None:
+        """
+        Trys to make a socket connection to the HVPS and saves the user inputs for the
+        ip and port addresses. If the connection is successful, changes the successful
+        connection flag to True and closes the window. Otherwise, shows a pop up to let
+        the user know the connection attempt was unsuccessful.
+        """
         self.sock: Optional[SocketType] = open_socket(
             ip=self.ip_entry.text(),
             port=int(self.port_entry.text()),
             timeout=TIMEOUT,
         )
+        self.ip = self.ip_entry.text()
+        self.port = self.port_entry.text()
         if self.sock:
             self.connection_successful = True
             self.close()
@@ -101,6 +122,12 @@ class OpenSocketWindow(QWidget):
             QMessageBox.critical(self, title, text, buttons)
 
     def closeEvent(self, event) -> None:
+        """
+        When the window is closed, if the connection was successful emits the Signal
+        with the socket object. Regardless of connection, emits the user input IP
+        and port addresses.
+        """
         if self.connection_successful:
             self.successful.emit(self.sock)
+        self.closed_window.emit(self.ip, self.port)
         super().closeEvent(event)

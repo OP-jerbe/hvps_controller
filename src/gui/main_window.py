@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 from qt_material import apply_stylesheet
 
+from helpers.constants import IP, PORT
 from helpers.helpers import close_socket, get_root_dir
 
 from ..hvps.hvps_api import HVPSv3
@@ -31,12 +32,15 @@ class MainWindow(QMainWindow):
     def __init__(self, version: str, sock: Optional[SocketType] = None) -> None:
         super().__init__()
         self.version = version
+        self.ip: str = IP
+        self.port: str = str(PORT)
         self.sock: Optional[SocketType] = sock
         self.hvps: HVPSv3
         # If there's a socket connection, instantiate the HVPS object
         if self.sock:
             self.hvps = HVPSv3(self.sock)
         self.installEventFilter(self)
+        self.open_socket_window: Optional[OpenSocketWindow] = None
         self.create_gui()
 
     def create_gui(self) -> None:
@@ -173,24 +177,41 @@ class MainWindow(QMainWindow):
 
     def handle_open_socket_window(self) -> None:
         """
-        Opens a window with `IP` and `PORT` QLineEdits and a `Connect` button,
+        Opens a window with `IP` and `PORT` QLineEdits and a `Connect` QPushButton,
         populated with IP and PORT global variables.
         If self.sock is not None, all QWidgets in OpenSocketWindow are disabled.
         """
-        self.open_socket_window = OpenSocketWindow(self.sock)
-        self.open_socket_window.successful.connect(self.get_socket)
-        self.open_socket_window.show()
+        if self.open_socket_window is None:
+            self.open_socket_window = OpenSocketWindow(
+                sock=self.sock, parent=self, ip_str=self.ip, port_str=self.port
+            )
+            self.open_socket_window.successful.connect(self.get_socket)
+            self.open_socket_window.closed_window.connect(
+                self.handle_connection_window_closed
+            )
+            self.open_socket_window.show()
+            self.open_socket_window.activateWindow()  # gives the window focus
+            self.open_socket_window.raise_()  # ensures window is visually on top of other windows
 
     def get_socket(self, sock: SocketType) -> None:
         """
-        Gets the socket from the OpenSocketWindow Signal
-        Instatiates the HVPSv3 class
-        Enables the HV and Solenoid buttons
+        Gets the socket from the OpenSocketWindow Signal.
+        Instatiates the HVPSv3 class with the socket connection.
+        Enables the HV and Solenoid buttons in the gui.
         """
         self.sock = sock
         self.hvps = HVPSv3(self.sock)
         self.hv_enable_btn.setEnabled(True)
         self.sol_enable_btn.setEnabled(True)
+
+    def handle_connection_window_closed(self, ip: str, port: str) -> None:
+        """
+        Sets the open_socket_window object to None for clean up purposes.
+        Sets self.ip and self.port to the user inputs
+        """
+        self.open_socket_window = None
+        self.ip = ip
+        self.port = port
 
     def handle_run_test(self) -> None:
         print('Run Test Clicked')
@@ -240,11 +261,9 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:
         """
-        Handles what happens with the application is closed.
+        Handles what happens when the application is closed.
         If there is socket connection, terminate the connection.
         """
         if self.sock:
             close_socket(self.sock)
-        else:
-            print('No Socket Connection. Application terminated.')
         super().closeEvent(event)
