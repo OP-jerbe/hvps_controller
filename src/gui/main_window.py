@@ -95,6 +95,9 @@ class MainWindow(QMainWindow):
         self.sol_enable_btn.setCheckable(True)
         self.sol_enable_btn.setFixedWidth(button_width)
         self.sol_enable_btn.clicked.connect(self.handle_sol_enable_btn)
+        if not self.sock:
+            self.hv_enable_btn.setEnabled(False)
+            self.sol_enable_btn.setEnabled(False)
 
         # Create the labels and entry boxes
         self.hv_btn_label = QLabel('High Voltage')
@@ -181,9 +184,13 @@ class MainWindow(QMainWindow):
     def get_socket(self, sock: SocketType) -> None:
         """
         Gets the socket from the OpenSocketWindow Signal
+        Instatiates the HVPSv3 class
+        Enables the HV and Solenoid buttons
         """
         self.sock = sock
         self.hvps = HVPSv3(self.sock)
+        self.hv_enable_btn.setEnabled(True)
+        self.sol_enable_btn.setEnabled(True)
 
     def handle_run_test(self) -> None:
         print('Run Test Clicked')
@@ -206,11 +213,11 @@ class MainWindow(QMainWindow):
         Enables HV if the button has not been checked.
         """
         if not self.hv_enable_btn.isChecked():
-            self.hvps.disable_high_voltage()
             self.hv_enable_btn.setText('OFF')
+            self.hvps.disable_high_voltage()
         else:
-            self.hvps.enable_high_voltage()
             self.hv_enable_btn.setText('ON')
+            self.hvps.enable_high_voltage()
             for (line_edit, setting), channel in zip(
                 self.voltage_entries.items(), self.hvps.occupied_channels
             ):
