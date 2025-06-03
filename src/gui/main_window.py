@@ -28,7 +28,7 @@ from .open_socket_window import OpenSocketWindow
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, version: str, sock: Optional[SocketType]) -> None:
+    def __init__(self, version: str, sock: Optional[SocketType] = None) -> None:
         super().__init__()
         self.version = version
         self.sock: Optional[SocketType] = sock
@@ -190,11 +190,8 @@ class MainWindow(QMainWindow):
 
     def handle_exit(self) -> None:
         """
-        Handles what happens with the application is closed.
-        If there is socket connection, terminate the connection.
+        Quits the application
         """
-        if self.sock:
-            close_socket(self.sock)
         QApplication.quit()
 
     def open_user_guide(self) -> None:
@@ -209,16 +206,16 @@ class MainWindow(QMainWindow):
         Enables HV if the button has not been checked.
         """
         if not self.hv_enable_btn.isChecked():
-            # self.hvps.disable_high_voltage()
+            self.hvps.disable_high_voltage()
             self.hv_enable_btn.setText('OFF')
         else:
-            # self.hvps.enable_high_voltage()
+            self.hvps.enable_high_voltage()
             self.hv_enable_btn.setText('ON')
             for (line_edit, setting), channel in zip(
                 self.voltage_entries.items(), self.hvps.occupied_channels
             ):
                 setting = line_edit.text()
-                # self.hvps.set_voltage(channel, setting)
+                self.hvps.set_voltage(channel, setting)
 
     def handle_sol_enable_btn(self) -> None:
         """
@@ -226,10 +223,21 @@ class MainWindow(QMainWindow):
         Enables solenoid current if the button has been checked.
         """
         if not self.sol_enable_btn.isChecked():
-            # self.hvps.disable_solenoid_current()
             self.sol_enable_btn.setText('OFF')
+            self.hvps.disable_solenoid_current()
         else:
-            # self.hvps.enable_solenoid_current()
             self.sol_enable_btn.setText('ON')
             self.sol_setting = self.solenoid_entry.text()
-            # self.hvps.set_solenoid_current(self.sol_setting)
+            self.hvps.enable_solenoid_current()
+            self.hvps.set_solenoid_current(self.sol_setting)
+
+    def closeEvent(self, event) -> None:
+        """
+        Handles what happens with the application is closed.
+        If there is socket connection, terminate the connection.
+        """
+        if self.sock:
+            close_socket(self.sock)
+        else:
+            print('No Socket Connection. Application terminated.')
+        super().closeEvent(event)
