@@ -3,7 +3,14 @@ from socket import SocketType
 from typing import Callable, Optional
 
 from PySide6.QtCore import QEvent, QObject, QRegularExpression, Qt, Signal
-from PySide6.QtGui import QAction, QIcon, QMouseEvent, QRegularExpressionValidator
+from PySide6.QtGui import (
+    QAction,
+    QIcon,
+    QMouseEvent,
+    QRegularExpressionValidator,
+    QTextCursor,
+    QTextListFormat,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -18,6 +25,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -37,6 +45,7 @@ class HVPSTestWindow(QDialog):
         self.setWindowFlags(Qt.WindowType.Dialog)
         self.sock = sock
         self.hvps: HVPSv3
+        self.test_voltage = 200
         self.installEventFilter(self)
         root_dir: Path = get_root_dir()
         icon_path: str = str(root_dir / 'assets' / 'hvps_icon.ico')
@@ -101,7 +110,7 @@ class HVPSTestWindow(QDialog):
         self.setLayout(self.main_layout)
 
     def handle_channel_select(self) -> None:
-        self.occupied_channels = []
+        self.occupied_channels: list[str] = []
         for chbx, channel in self.checkbox_channels.items():
             if chbx.isChecked():
                 self.occupied_channels.append(channel)
@@ -130,22 +139,59 @@ class HVPSTestWindow(QDialog):
         if self.current_stage_index < len(self.test_stages):
             self.clear_layout()
             self.test_stages[self.current_stage_index]()
+        else:
+            self.test_complete.emit()
+            self.close()
 
     def handle_next_btn(self) -> None:
         self.current_stage_index += 1
         self.load_current_stage()
 
     def create_beam_test_gui(self) -> None:
-        print('into beam test')
-        window_width = 400
-        window_height = 400
+        window_width = 420
+        window_height = 350
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Beam Channel Test')
+
+        instructions: str = (
+            '1. Plug HV pigtail into Beam HV recepticle.\n'
+            '2. Attach positive lead of voltmeter to pigtail.\n'
+            '3. Attach common lead of voltmeter to ground.\n'
+            '4. Press the "Enable POS HV" button.\n'
+            '5. Verify +200 V on the voltmeter.\n'
+            '6. Press the "Enable NEG HV" button.\n'
+            '7. Verify -200 V on the voltmeter.\n'
+            '8. Press the "Disable HV" button.\n'
+            '9. Click the "Next" button to continue.\n'
+        )
+
+        title_label = QLabel('Beam Test')
+        instructions_txt = QLabel(instructions)
+
+        enable_pos_hv_btn = QPushButton('Enable POS HV')
+        enable_pos_hv_btn.clicked.connect(lambda: self.handle_enable_pos_hv_btn('BM'))
+
+        enable_neg_hv_btn = QPushButton('Enable NEG HV')
+        enable_neg_hv_btn.clicked.connect(lambda: self.handle_enable_neg_hv_btn('BM'))
+
+        disable_hv_btn = QPushButton('Disable HV')
+        disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
 
         next_btn = QPushButton('Next')
         next_btn.clicked.connect(self.handle_next_btn)
 
-        self.main_layout.addWidget(next_btn, 0, 0)
+        # Create a vertical line
+        vertical_line = QFrame()
+        vertical_line.setFrameShape(QFrame.Shape.VLine)
+
+        self.main_layout.addWidget(title_label, 0, 0, 1, 2)
+        self.main_layout.addWidget(instructions_txt, 1, 0, 1, 3)
+        self.main_layout.addWidget(enable_pos_hv_btn, 2, 0)
+        self.main_layout.addWidget(enable_neg_hv_btn, 2, 1)
+        self.main_layout.addWidget(disable_hv_btn, 2, 2)
+        self.main_layout.addWidget(next_btn, 3, 0, 1, 3)
+
+        self.main_layout.addWidget(vertical_line, 0, 3, 4, 1)
         self.setLayout(self.main_layout)
 
     def create_ext_test_gui(self) -> None:
@@ -219,6 +265,19 @@ class HVPSTestWindow(QDialog):
 
         self.main_layout.addWidget(next_btn, 0, 0)
         self.setLayout(self.main_layout)
+
+    def handle_disable_hv_btn(self) -> None:
+        self.hvps.disable_high_voltage()
+
+    def handle_enable_pos_hv_btn(self, channel) -> None:
+        voltage: str = f'{self.test_voltage}'
+        self.hvps.enable_high_voltage()
+        self.hvps.set_voltage(channel, voltage)
+
+    def handle_enable_neg_hv_btn(self, channel) -> None:
+        voltage: str = f'-{self.test_voltage}'
+        self.hvps.enable_high_voltage()
+        self.hvps.set_voltage(channel, voltage)
 
     def closeEvent(self, event) -> None:
         self.window_closed.emit()
