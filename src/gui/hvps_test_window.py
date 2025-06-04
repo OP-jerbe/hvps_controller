@@ -111,7 +111,7 @@ class HVPSTestWindow(QDialog):
         if 'BM' in self.occupied_channels:
             self.clear_layout()
             self.create_beam_test_gui()
-        if 'Ext' in self.occupied_channels:
+        if 'EX' in self.occupied_channels:
             self.clear_layout()
             self.create_ext_test_gui()
         if 'L1' in self.occupied_channels:
