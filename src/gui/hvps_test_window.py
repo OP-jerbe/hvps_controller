@@ -1,6 +1,6 @@
 from pathlib import Path
 from socket import SocketType
-from typing import Optional
+from typing import Callable, Optional
 
 from PySide6.QtCore import QEvent, QObject, QRegularExpression, Qt, Signal
 from PySide6.QtGui import QAction, QIcon, QMouseEvent, QRegularExpressionValidator
@@ -108,30 +108,32 @@ class HVPSTestWindow(QDialog):
         self.test_plan()
 
     def test_plan(self) -> None:
+        self.test_stages: list[Callable] = []
         if 'BM' in self.occupied_channels:
-            self.clear_layout()
-            self.create_beam_test_gui()
+            self.test_stages.append(self.create_beam_test_gui)
         if 'EX' in self.occupied_channels:
-            self.clear_layout()
-            self.create_ext_test_gui()
+            self.test_stages.append(self.create_ext_test_gui)
         if 'L1' in self.occupied_channels:
-            self.clear_layout()
-            self.create_L1_test_gui
+            self.test_stages.append(self.create_L1_test_gui)
         if 'L2' in self.occupied_channels:
-            self.clear_layout()
-            self.create_L2_test_gui
+            self.test_stages.append(self.create_L2_test_gui)
         if 'L3' in self.occupied_channels:
-            self.clear_layout()
-            self.create_L3_test_gui
+            self.test_stages.append(self.create_L3_test_gui)
         if 'L4' in self.occupied_channels:
-            self.clear_layout()
-            self.create_L4_test_gui
+            self.test_stages.append(self.create_L4_test_gui)
         if 'SL' in self.occupied_channels:
+            self.test_stages.append(self.create_sol_test_gui)
+        self.current_stage_index: int = 0
+        self.load_current_stage()
+
+    def load_current_stage(self) -> None:
+        if self.current_stage_index < len(self.test_stages):
             self.clear_layout()
-            self.create_sol_test_gui
+            self.test_stages[self.current_stage_index]()
 
     def handle_next_btn(self) -> None:
-        return
+        self.current_stage_index += 1
+        self.load_current_stage()
 
     def create_beam_test_gui(self) -> None:
         print('into beam test')
@@ -152,11 +154,23 @@ class HVPSTestWindow(QDialog):
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Extractor Channel Test')
 
+        next_btn = QPushButton('Next')
+        next_btn.clicked.connect(self.handle_next_btn)
+
+        self.main_layout.addWidget(next_btn, 0, 0)
+        self.setLayout(self.main_layout)
+
     def create_L1_test_gui(self) -> None:
         window_width = 400
         window_height = 400
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 1 Channel Test')
+
+        next_btn = QPushButton('Next')
+        next_btn.clicked.connect(self.handle_next_btn)
+
+        self.main_layout.addWidget(next_btn, 0, 0)
+        self.setLayout(self.main_layout)
 
     def create_L2_test_gui(self) -> None:
         window_width = 400
@@ -164,11 +178,23 @@ class HVPSTestWindow(QDialog):
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 2 Channel Test')
 
+        next_btn = QPushButton('Next')
+        next_btn.clicked.connect(self.handle_next_btn)
+
+        self.main_layout.addWidget(next_btn, 0, 0)
+        self.setLayout(self.main_layout)
+
     def create_L3_test_gui(self) -> None:
         window_width = 400
         window_height = 400
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 3 Channel Test')
+
+        next_btn = QPushButton('Next')
+        next_btn.clicked.connect(self.handle_next_btn)
+
+        self.main_layout.addWidget(next_btn, 0, 0)
+        self.setLayout(self.main_layout)
 
     def create_L4_test_gui(self) -> None:
         window_width = 400
@@ -176,11 +202,23 @@ class HVPSTestWindow(QDialog):
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 4 Channel Test')
 
+        next_btn = QPushButton('Next')
+        next_btn.clicked.connect(self.handle_next_btn)
+
+        self.main_layout.addWidget(next_btn, 0, 0)
+        self.setLayout(self.main_layout)
+
     def create_sol_test_gui(self) -> None:
         window_width = 400
         window_height = 400
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Solenoid Channel Test')
+
+        next_btn = QPushButton('Next')
+        next_btn.clicked.connect(self.handle_next_btn)
+
+        self.main_layout.addWidget(next_btn, 0, 0)
+        self.setLayout(self.main_layout)
 
     def closeEvent(self, event) -> None:
         self.window_closed.emit()
