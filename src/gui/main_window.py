@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         root_dir: Path = get_root_dir()
         icon_path: str = str(root_dir / 'assets' / 'hvps_icon.ico')
         self.setWindowIcon(QIcon(icon_path))
-        self.setWindowTitle(f'HVPSv3 Tester (v{self.version})')
+        self.setWindowTitle(f'HVPS Controller (v{self.version})')
         apply_stylesheet(self, theme='dark_lightgreen.xml', invert_secondary=True)
         self.setStyleSheet(
             self.styleSheet() + """QLineEdit, QTextEdit {color: lightgreen;}"""
@@ -225,11 +225,14 @@ class MainWindow(QMainWindow):
             self.hvps_test_window.exec()
 
     def handle_hvps_test_complete(self) -> None:
-        self.hvps_test_window = None
-        print(f'{self.hvps_test_window = }')
+        title = 'Test Complete'
+        text = 'HVPS test complete'
+        buttons = QMessageBox.StandardButton.Ok
+        QMessageBox.information(self, title, text, buttons)
 
     def handle_test_hvps_window_closed(self) -> None:
         self.hvps_test_window = None
+        print(f'{self.hvps_test_window = }')
 
     def handle_exit(self) -> None:
         """
