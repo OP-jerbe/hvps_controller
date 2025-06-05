@@ -7,6 +7,7 @@ from PySide6.QtGui import (
     QAction,
     QIcon,
     QMouseEvent,
+    QPixmap,
     QRegularExpressionValidator,
     QTextCursor,
     QTextListFormat,
@@ -45,10 +46,11 @@ class HVPSTestWindow(QDialog):
         self.setWindowFlags(Qt.WindowType.Dialog)
         self.sock = sock
         self.hvps: HVPSv3
-        self.test_voltage = 200
+        self.test_voltage: str = '200'
+        self.test_currents: tuple[str, ...] = ('0.3', '1.2', '2.5')
         self.installEventFilter(self)
-        root_dir: Path = get_root_dir()
-        icon_path: str = str(root_dir / 'assets' / 'hvps_icon.ico')
+        self.root_dir: Path = get_root_dir()
+        icon_path: str = str(self.root_dir / 'assets' / 'hvps_icon.ico')
         self.setWindowIcon(QIcon(icon_path))
         apply_stylesheet(self, theme='dark_lightgreen.xml', invert_secondary=True)
         self.setStyleSheet(
@@ -148,8 +150,8 @@ class HVPSTestWindow(QDialog):
         self.load_current_stage()
 
     def create_beam_test_gui(self) -> None:
-        window_width = 420
-        window_height = 350
+        window_width = 1200
+        window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Beam Channel Test')
 
@@ -184,6 +186,12 @@ class HVPSTestWindow(QDialog):
         vertical_line = QFrame()
         vertical_line.setFrameShape(QFrame.Shape.VLine)
 
+        # Create the widget to hold the photo
+        photo = QLabel()
+        photo_path: Path = self.root_dir / 'assets' / 'beam.jpg'
+        pixmap = QPixmap(photo_path)
+        photo.setPixmap(pixmap)
+
         self.main_layout.addWidget(title_label, 0, 0, 1, 2)
         self.main_layout.addWidget(instructions_txt, 1, 0, 1, 3)
         self.main_layout.addWidget(enable_pos_hv_btn, 2, 0)
@@ -192,92 +200,374 @@ class HVPSTestWindow(QDialog):
         self.main_layout.addWidget(next_btn, 3, 0, 1, 3)
 
         self.main_layout.addWidget(vertical_line, 0, 3, 4, 1)
+
+        self.main_layout.addWidget(photo, 0, 4, 4, 1)
         self.setLayout(self.main_layout)
 
     def create_ext_test_gui(self) -> None:
-        window_width = 400
-        window_height = 400
+        window_width = 1200
+        window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Extractor Channel Test')
 
+        instructions: str = (
+            '1. Plug HV pigtail into Extractor HV recepticle.\n'
+            '2. Attach positive lead of voltmeter to pigtail.\n'
+            '3. Attach common lead of voltmeter to ground.\n'
+            '4. Press the "Enable POS HV" button.\n'
+            '5. Verify +200 V on the voltmeter.\n'
+            '6. Press the "Enable NEG HV" button.\n'
+            '7. Verify -200 V on the voltmeter.\n'
+            '8. Press the "Disable HV" button.\n'
+            '9. Click the "Next" button to continue.\n'
+        )
+
+        title_label = QLabel('Extractor Test')
+        instructions_txt = QLabel(instructions)
+
+        enable_pos_hv_btn = QPushButton('Enable POS HV')
+        enable_pos_hv_btn.clicked.connect(lambda: self.handle_enable_pos_hv_btn('EX'))
+
+        enable_neg_hv_btn = QPushButton('Enable NEG HV')
+        enable_neg_hv_btn.clicked.connect(lambda: self.handle_enable_neg_hv_btn('EX'))
+
+        disable_hv_btn = QPushButton('Disable HV')
+        disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+
         next_btn = QPushButton('Next')
         next_btn.clicked.connect(self.handle_next_btn)
 
-        self.main_layout.addWidget(next_btn, 0, 0)
+        # Create a vertical line
+        vertical_line = QFrame()
+        vertical_line.setFrameShape(QFrame.Shape.VLine)
+
+        # Create the widget to hold the photo
+        photo = QLabel()
+        photo_path: Path = self.root_dir / 'assets' / 'ext.jpg'
+        pixmap = QPixmap(photo_path)
+        photo.setPixmap(pixmap)
+
+        self.main_layout.addWidget(title_label, 0, 0, 1, 2)
+        self.main_layout.addWidget(instructions_txt, 1, 0, 1, 3)
+        self.main_layout.addWidget(enable_pos_hv_btn, 2, 0)
+        self.main_layout.addWidget(enable_neg_hv_btn, 2, 1)
+        self.main_layout.addWidget(disable_hv_btn, 2, 2)
+        self.main_layout.addWidget(next_btn, 3, 0, 1, 3)
+
+        self.main_layout.addWidget(vertical_line, 0, 3, 4, 1)
+
+        self.main_layout.addWidget(photo, 0, 4, 4, 1)
         self.setLayout(self.main_layout)
 
     def create_L1_test_gui(self) -> None:
-        window_width = 400
-        window_height = 400
+        window_width = 1200
+        window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 1 Channel Test')
 
+        instructions: str = (
+            '1. Plug HV pigtail into Lens 1 HV recepticle.\n'
+            '2. Attach positive lead of voltmeter to pigtail.\n'
+            '3. Attach common lead of voltmeter to ground.\n'
+            '4. Press the "Enable POS HV" button.\n'
+            '5. Verify +200 V on the voltmeter.\n'
+            '6. Press the "Enable NEG HV" button.\n'
+            '7. Verify -200 V on the voltmeter.\n'
+            '8. Press the "Disable HV" button.\n'
+            '9. Click the "Next" button to continue.\n'
+        )
+
+        title_label = QLabel('Lens 1 Test')
+        instructions_txt = QLabel(instructions)
+
+        enable_pos_hv_btn = QPushButton('Enable POS HV')
+        enable_pos_hv_btn.clicked.connect(lambda: self.handle_enable_pos_hv_btn('L1'))
+
+        enable_neg_hv_btn = QPushButton('Enable NEG HV')
+        enable_neg_hv_btn.clicked.connect(lambda: self.handle_enable_neg_hv_btn('L1'))
+
+        disable_hv_btn = QPushButton('Disable HV')
+        disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+
         next_btn = QPushButton('Next')
         next_btn.clicked.connect(self.handle_next_btn)
 
-        self.main_layout.addWidget(next_btn, 0, 0)
+        # Create a vertical line
+        vertical_line = QFrame()
+        vertical_line.setFrameShape(QFrame.Shape.VLine)
+
+        # Create the widget to hold the photo
+        photo = QLabel()
+        photo_path: Path = self.root_dir / 'assets' / 'L1.jpg'
+        pixmap = QPixmap(photo_path)
+        photo.setPixmap(pixmap)
+
+        self.main_layout.addWidget(title_label, 0, 0, 1, 2)
+        self.main_layout.addWidget(instructions_txt, 1, 0, 1, 3)
+        self.main_layout.addWidget(enable_pos_hv_btn, 2, 0)
+        self.main_layout.addWidget(enable_neg_hv_btn, 2, 1)
+        self.main_layout.addWidget(disable_hv_btn, 2, 2)
+        self.main_layout.addWidget(next_btn, 3, 0, 1, 3)
+
+        self.main_layout.addWidget(vertical_line, 0, 3, 4, 1)
+
+        self.main_layout.addWidget(photo, 0, 4, 4, 1)
         self.setLayout(self.main_layout)
 
     def create_L2_test_gui(self) -> None:
-        window_width = 400
-        window_height = 400
+        window_width = 1200
+        window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 2 Channel Test')
 
+        instructions: str = (
+            '1. Plug HV pigtail into Lens 2 HV recepticle.\n'
+            '2. Attach positive lead of voltmeter to pigtail.\n'
+            '3. Attach common lead of voltmeter to ground.\n'
+            '4. Press the "Enable POS HV" button.\n'
+            '5. Verify +200 V on the voltmeter.\n'
+            '6. Press the "Enable NEG HV" button.\n'
+            '7. Verify -200 V on the voltmeter.\n'
+            '8. Press the "Disable HV" button.\n'
+            '9. Click the "Next" button to continue.\n'
+        )
+
+        title_label = QLabel('Lens 2 Test')
+        instructions_txt = QLabel(instructions)
+
+        enable_pos_hv_btn = QPushButton('Enable POS HV')
+        enable_pos_hv_btn.clicked.connect(lambda: self.handle_enable_pos_hv_btn('L2'))
+
+        enable_neg_hv_btn = QPushButton('Enable NEG HV')
+        enable_neg_hv_btn.clicked.connect(lambda: self.handle_enable_neg_hv_btn('L2'))
+
+        disable_hv_btn = QPushButton('Disable HV')
+        disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+
         next_btn = QPushButton('Next')
         next_btn.clicked.connect(self.handle_next_btn)
 
-        self.main_layout.addWidget(next_btn, 0, 0)
+        # Create a vertical line
+        vertical_line = QFrame()
+        vertical_line.setFrameShape(QFrame.Shape.VLine)
+
+        # Create the widget to hold the photo
+        photo = QLabel()
+        photo_path: Path = self.root_dir / 'assets' / 'L2.jpg'
+        pixmap = QPixmap(photo_path)
+        photo.setPixmap(pixmap)
+
+        self.main_layout.addWidget(title_label, 0, 0, 1, 2)
+        self.main_layout.addWidget(instructions_txt, 1, 0, 1, 3)
+        self.main_layout.addWidget(enable_pos_hv_btn, 2, 0)
+        self.main_layout.addWidget(enable_neg_hv_btn, 2, 1)
+        self.main_layout.addWidget(disable_hv_btn, 2, 2)
+        self.main_layout.addWidget(next_btn, 3, 0, 1, 3)
+
+        self.main_layout.addWidget(vertical_line, 0, 3, 4, 1)
+
+        self.main_layout.addWidget(photo, 0, 4, 4, 1)
         self.setLayout(self.main_layout)
 
     def create_L3_test_gui(self) -> None:
-        window_width = 400
-        window_height = 400
+        window_width = 1200
+        window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 3 Channel Test')
 
+        instructions: str = (
+            '1. Plug HV pigtail into Lens 3 HV recepticle.\n'
+            '2. Attach positive lead of voltmeter to pigtail.\n'
+            '3. Attach common lead of voltmeter to ground.\n'
+            '4. Press the "Enable POS HV" button.\n'
+            '5. Verify +200 V on the voltmeter.\n'
+            '6. Press the "Enable NEG HV" button.\n'
+            '7. Verify -200 V on the voltmeter.\n'
+            '8. Press the "Disable HV" button.\n'
+            '9. Click the "Next" button to continue.\n'
+        )
+
+        title_label = QLabel('Lens 3 Test')
+        instructions_txt = QLabel(instructions)
+
+        enable_pos_hv_btn = QPushButton('Enable POS HV')
+        enable_pos_hv_btn.clicked.connect(lambda: self.handle_enable_pos_hv_btn('L3'))
+
+        enable_neg_hv_btn = QPushButton('Enable NEG HV')
+        enable_neg_hv_btn.clicked.connect(lambda: self.handle_enable_neg_hv_btn('L3'))
+
+        disable_hv_btn = QPushButton('Disable HV')
+        disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+
         next_btn = QPushButton('Next')
         next_btn.clicked.connect(self.handle_next_btn)
 
-        self.main_layout.addWidget(next_btn, 0, 0)
+        # Create a vertical line
+        vertical_line = QFrame()
+        vertical_line.setFrameShape(QFrame.Shape.VLine)
+
+        # Create the widget to hold the photo
+        photo = QLabel()
+        photo_path: Path = self.root_dir / 'assets' / 'L3.jpg'
+        pixmap = QPixmap(photo_path)
+        photo.setPixmap(pixmap)
+
+        self.main_layout.addWidget(title_label, 0, 0, 1, 2)
+        self.main_layout.addWidget(instructions_txt, 1, 0, 1, 3)
+        self.main_layout.addWidget(enable_pos_hv_btn, 2, 0)
+        self.main_layout.addWidget(enable_neg_hv_btn, 2, 1)
+        self.main_layout.addWidget(disable_hv_btn, 2, 2)
+        self.main_layout.addWidget(next_btn, 3, 0, 1, 3)
+
+        self.main_layout.addWidget(vertical_line, 0, 3, 4, 1)
+
+        self.main_layout.addWidget(photo, 0, 4, 4, 1)
         self.setLayout(self.main_layout)
 
     def create_L4_test_gui(self) -> None:
-        window_width = 400
-        window_height = 400
+        window_width = 1200
+        window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 4 Channel Test')
 
+        instructions: str = (
+            '1. Plug HV pigtail into Lens 4 HV recepticle.\n'
+            '2. Attach positive lead of voltmeter to pigtail.\n'
+            '3. Attach common lead of voltmeter to ground.\n'
+            '4. Press the "Enable POS HV" button.\n'
+            '5. Verify +200 V on the voltmeter.\n'
+            '6. Press the "Enable NEG HV" button.\n'
+            '7. Verify -200 V on the voltmeter.\n'
+            '8. Press the "Disable HV" button.\n'
+            '9. Click the "Next" button to continue.\n'
+        )
+
+        title_label = QLabel('Lens 4 Test')
+        instructions_txt = QLabel(instructions)
+
+        enable_pos_hv_btn = QPushButton('Enable POS HV')
+        enable_pos_hv_btn.clicked.connect(lambda: self.handle_enable_pos_hv_btn('L4'))
+
+        enable_neg_hv_btn = QPushButton('Enable NEG HV')
+        enable_neg_hv_btn.clicked.connect(lambda: self.handle_enable_neg_hv_btn('L4'))
+
+        disable_hv_btn = QPushButton('Disable HV')
+        disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+
         next_btn = QPushButton('Next')
         next_btn.clicked.connect(self.handle_next_btn)
 
-        self.main_layout.addWidget(next_btn, 0, 0)
+        # Create a vertical line
+        vertical_line = QFrame()
+        vertical_line.setFrameShape(QFrame.Shape.VLine)
+
+        # Create the widget to hold the photo
+        photo = QLabel()
+        photo_path: Path = self.root_dir / 'assets' / 'L4.jpg'
+        pixmap = QPixmap(photo_path)
+        photo.setPixmap(pixmap)
+
+        self.main_layout.addWidget(title_label, 0, 0, 1, 2)
+        self.main_layout.addWidget(instructions_txt, 1, 0, 1, 3)
+        self.main_layout.addWidget(enable_pos_hv_btn, 2, 0)
+        self.main_layout.addWidget(enable_neg_hv_btn, 2, 1)
+        self.main_layout.addWidget(disable_hv_btn, 2, 2)
+        self.main_layout.addWidget(next_btn, 3, 0, 1, 3)
+
+        self.main_layout.addWidget(vertical_line, 0, 3, 4, 1)
+
+        self.main_layout.addWidget(photo, 0, 4, 4, 1)
         self.setLayout(self.main_layout)
 
     def create_sol_test_gui(self) -> None:
-        window_width = 400
-        window_height = 400
+        window_width = 1200
+        window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Solenoid Channel Test')
+
+        instructions: str = (
+            '1.  Plug in a 2-pin Fischer connector to the solenoid current recepticle.\n'
+            '2.  Plug in the current tester connector to other end of the 2-pin\n'
+            '     Fischer connector.\n'
+            '3.  Set up a multimeter to measure current. Set the scale to so that\n'
+            '     the meter can read up to 2.5 A.\n'
+            '4.  Attach the positive lead to one pin of the current connector.\n'
+            '5.  Attach the common lead to the other pin of the current connector.\n'
+            '6.  Press the "Test 0.3 A" button.\n'
+            '7.  Verify 0.3 A on the ammeter.\n'
+            '8.  Press the "Test 1.2 A" button.\n'
+            '9.  Verify 1.2 A on the ammeter.\n'
+            '10. Press the "2.5 A" button.\n'
+            '11. Verify 2.5 A on the ammeter.\n'
+            '12. Press the "Disable Solenoid" button.\n'
+        )
+
+        title_label = QLabel('Solenoid Test')
+        instructions_txt = QLabel(instructions)
+
+        current1_btn = QPushButton('Test 0.3 A')
+        current1_btn.clicked.connect(
+            lambda: self.handle_test_sol_btn(self.test_currents[0])
+        )
+
+        current2_btn = QPushButton('Test 1.2 A')
+        current2_btn.clicked.connect(
+            lambda: self.handle_test_sol_btn(self.test_currents[1])
+        )
+
+        current3_btn = QPushButton('Test 2.5 A')
+        current3_btn.clicked.connect(
+            lambda: self.handle_test_sol_btn(self.test_currents[2])
+        )
+
+        disable_sol_btn = QPushButton('Disable Solenoid')
+        disable_sol_btn.clicked.connect(self.handle_disable_sol_btn)
 
         next_btn = QPushButton('Next')
         next_btn.clicked.connect(self.handle_next_btn)
 
-        self.main_layout.addWidget(next_btn, 0, 0)
+        # Create a vertical line
+        vertical_line = QFrame()
+        vertical_line.setFrameShape(QFrame.Shape.VLine)
+
+        # Create the widget to hold the photo
+        photo = QLabel()
+        photo_path: Path = self.root_dir / 'assets' / 'sol.jpg'
+        pixmap = QPixmap(photo_path)
+        photo.setPixmap(pixmap)
+
+        self.main_layout.addWidget(title_label, 0, 0, 1, 3)
+        self.main_layout.addWidget(instructions_txt, 1, 0, 1, 3)
+        self.main_layout.addWidget(current1_btn, 2, 0)
+        self.main_layout.addWidget(current2_btn, 2, 1)
+        self.main_layout.addWidget(current3_btn, 2, 2)
+        self.main_layout.addWidget(disable_sol_btn, 3, 0, 1, 3)
+        self.main_layout.addWidget(next_btn, 4, 0, 1, 3)
+
+        self.main_layout.addWidget(vertical_line, 0, 4, 5, 1)
+
+        self.main_layout.addWidget(photo, 0, 5, 5, 1)
         self.setLayout(self.main_layout)
 
     def handle_disable_hv_btn(self) -> None:
         self.hvps.disable_high_voltage()
 
-    def handle_enable_pos_hv_btn(self, channel) -> None:
+    def handle_enable_pos_hv_btn(self, channel: str) -> None:
         voltage: str = f'{self.test_voltage}'
         self.hvps.enable_high_voltage()
         self.hvps.set_voltage(channel, voltage)
 
-    def handle_enable_neg_hv_btn(self, channel) -> None:
+    def handle_enable_neg_hv_btn(self, channel: str) -> None:
         voltage: str = f'-{self.test_voltage}'
         self.hvps.enable_high_voltage()
         self.hvps.set_voltage(channel, voltage)
+
+    def handle_test_sol_btn(self, current: str) -> None:
+        self.hvps.enable_solenoid_current()
+        self.hvps.set_solenoid_current(current)
+
+    def handle_disable_sol_btn(self) -> None:
+        self.hvps.disable_solenoid_current()
 
     def closeEvent(self, event) -> None:
         self.window_closed.emit()
