@@ -51,7 +51,8 @@ class MainWindow(QMainWindow):
 
     def start_pinging_hvps(self) -> None:
         """
-        Creates a QTimer to ping the HVPS every
+        Creates a QTimer to ping the HVPS at an interval set
+        by `PING_INTERVAL` from constants.py
         """
         self.keep_alive_timer = QTimer(self)
         self.keep_alive_timer.timeout.connect(self.handle_hvps_ping)
@@ -193,9 +194,10 @@ class MainWindow(QMainWindow):
 
     def handle_open_socket_window(self) -> None:
         """
-        Opens a window with `IP` and `PORT` QLineEdits and a `Connect` QPushButton,
-        populated with IP and PORT global variables.
-        If self.sock is not None, all QWidgets in OpenSocketWindow are disabled.
+        Opens a window with `IP` and `PORT` QLineEdits, populated with
+        `IP` and `PORT` global variables, and a `Connect` QPushButton.
+        Note: If self.sock is None, when the window is opened, all QWidgets
+        in OpenSocketWindow are disabled.
         """
         if self.open_socket_window is None:
             self.open_socket_window = OpenSocketWindow(
@@ -233,6 +235,13 @@ class MainWindow(QMainWindow):
         self.port = port
 
     def handle_run_test(self) -> None:
+        """
+        Handles what happens when the user selects the "Run Test" option from the File menu.
+        If there isn't already a test window open and there is a socket connection,
+        Create the HVPSTestWindow object with the socket connection and connect
+        the Signals from the HVPSTestWindow to the proper Slots (methods).
+        Shows the test window as a modal window to block interaction with the main window.
+        """
         if self.hvps_test_window is None and self.sock is not None:
             self.hvps_test_window = HVPSTestWindow(sock=self.sock, parent=self)
             self.hvps_test_window.test_complete.connect(self.handle_hvps_test_complete)
@@ -242,14 +251,21 @@ class MainWindow(QMainWindow):
             self.hvps_test_window.exec()
 
     def handle_hvps_test_complete(self) -> None:
+        """
+        Handles what happens when the HVPS test has completes successfully.
+        Shows a message box that lets the user know the test is finished.
+        """
         title = 'Test Complete'
         text = 'HVPS test complete'
         buttons = QMessageBox.StandardButton.Ok
         QMessageBox.information(self, title, text, buttons)
 
     def handle_test_hvps_window_closed(self) -> None:
+        """
+        Handles what happens when the HVPSTestWindow is closed.
+        Sets the object variable to None.
+        """
         self.hvps_test_window = None
-        print(f'{self.hvps_test_window = }')
 
     def handle_exit(self) -> None:
         """
@@ -295,6 +311,12 @@ class MainWindow(QMainWindow):
             self.hvps.set_solenoid_current(self.sol_setting)
 
     def handle_hvps_ping(self) -> None:
+        """
+        Handles what happens when the QTimer times out.
+        Checks if the HVPS is still connected.
+        If it is not, disable enable buttons and test option.
+        Set the socket to None and stop the timer that triggers the ping.
+        """
         connected: bool = self.hvps.keep_alive()
         if not connected:
             self.run_test_action.setEnabled(False)
