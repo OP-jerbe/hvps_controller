@@ -2,7 +2,7 @@ from pathlib import Path
 from socket import SocketType
 from typing import Optional
 
-from PySide6.QtCore import QEvent, QObject, QRegularExpression, Qt, Signal
+from PySide6.QtCore import QEvent, QObject, QRegularExpression, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QIcon, QMouseEvent, QRegularExpressionValidator
 from PySide6.QtWidgets import (
     QApplication,
@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 from qt_material import apply_stylesheet
 
-from helpers.constants import IP, PORT
+from helpers.constants import IP, PING_INTERVAL, PORT
 from helpers.helpers import close_socket, get_root_dir
 
 from ..hvps.hvps_api import HVPSv3
@@ -37,13 +37,25 @@ class MainWindow(QMainWindow):
         self.port: str = str(PORT)
         self.sock: Optional[SocketType] = sock
         self.hvps: HVPSv3
+
         # If there's a socket connection, instantiate the HVPS object
+        # and begin pinging to prevent HVPS from timing out.
         if self.sock:
             self.hvps = HVPSv3(self.sock)
+            self.start_pinging_hvps()
+
         self.installEventFilter(self)
         self.open_socket_window: Optional[OpenSocketWindow] = None
         self.hvps_test_window: Optional[HVPSTestWindow] = None
         self.create_gui()
+
+    def start_pinging_hvps(self) -> None:
+        """
+        Creates a QTimer to ping the HVPS every
+        """
+        self.keep_alive_timer = QTimer(self)
+        self.keep_alive_timer.timeout.connect(self.handle_hvps_ping)
+        self.keep_alive_timer.start(PING_INTERVAL)
 
     def create_gui(self) -> None:
         window_width = 300
@@ -77,6 +89,8 @@ class MainWindow(QMainWindow):
         self.open_socket_window_action.triggered.connect(self.handle_open_socket_window)
         self.run_test_action = QAction(text='Run Test', parent=self)
         self.run_test_action.triggered.connect(self.handle_run_test)
+        if not self.sock:
+            self.run_test_action.setEnabled(False)
         self.exit_action = QAction(text='Exit', parent=self)
         self.exit_action.triggered.connect(self.handle_exit)
         self.open_user_guide_action = QAction(text='User Guide', parent=self)
@@ -199,10 +213,13 @@ class MainWindow(QMainWindow):
         """
         Gets the socket from the OpenSocketWindow Signal.
         Instatiates the HVPSv3 class with the socket connection.
+        Begins the ping timer so HVPS does not timeout the connection.
         Enables the HV and Solenoid buttons in the gui.
         """
         self.sock = sock
         self.hvps = HVPSv3(self.sock)
+        self.start_pinging_hvps()
+        self.run_test_action.setEnabled(True)
         self.hv_enable_btn.setEnabled(True)
         self.sol_enable_btn.setEnabled(True)
 
@@ -216,7 +233,7 @@ class MainWindow(QMainWindow):
         self.port = port
 
     def handle_run_test(self) -> None:
-        if self.hvps_test_window is None:  # and self.sock is not None:
+        if self.hvps_test_window is None and self.sock is not None:
             self.hvps_test_window = HVPSTestWindow(sock=self.sock, parent=self)
             self.hvps_test_window.test_complete.connect(self.handle_hvps_test_complete)
             self.hvps_test_window.window_closed.connect(
@@ -276,6 +293,15 @@ class MainWindow(QMainWindow):
             self.sol_setting = self.solenoid_entry.text()
             self.hvps.enable_solenoid_current()
             self.hvps.set_solenoid_current(self.sol_setting)
+
+    def handle_hvps_ping(self) -> None:
+        connected: bool = self.hvps.keep_alive()
+        if not connected:
+            self.run_test_action.setEnabled(False)
+            self.hv_enable_btn.setEnabled(False)
+            self.sol_enable_btn.setEnabled(False)
+            self.sock = None
+            self.keep_alive_timer.stop()
 
     def closeEvent(self, event) -> None:
         """
