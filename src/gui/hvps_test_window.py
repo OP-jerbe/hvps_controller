@@ -32,9 +32,7 @@ class HVPSTestWindow(QDialog):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.Dialog)
         self.sock = sock
-        self.hvps: HVPSv3 = HVPSv3(
-            sock
-        )  # set this equal to HVPSv3(sock) when interfacing with HVPS
+        self.hvps: HVPSv3 = HVPSv3(sock)
         self.test_voltages: tuple[str, ...] = ('100', '500', '1000')  # volts
         self.test_currents: tuple[str, ...] = ('0.3', '1.2', '2.5')  # amps
         self.installEventFilter(self)
@@ -53,6 +51,18 @@ class HVPSTestWindow(QDialog):
         self.sol_validator = QRegularExpressionValidator(sol_regex)
         self.main_layout = QGridLayout()
         self.create_channel_selection_gui()
+
+    def get_hv_enable_state(self) -> bool:
+        state: str = self.hvps.get_state()
+        if state == 'STATE0000' or state == 'STATE0010':
+            return False
+        return True
+
+    def get_sol_enable_state(self) -> bool:
+        state: str = self.hvps.get_state()
+        if state == 'STATE0000' or state == 'STATE0001':
+            return False
+        return True
 
     def clear_layout(self) -> None:
         while self.main_layout.count():
@@ -137,12 +147,17 @@ class HVPSTestWindow(QDialog):
             self.clear_layout()
             self.test_stages[self.current_stage_index]()
         else:
-            self.hvps.disable_high_voltage()
-            self.hvps.disable_solenoid_current()
             self.test_complete.emit()
             self.close()
 
     def handle_next_btn(self) -> None:
+        if self.get_hv_enable_state() is True:  # disable btn not pressed
+            self.hvps.disable_high_voltage()
+            self.hvps.set_voltage(self.channel, '0')
+        if self.get_sol_enable_state() is True:  # disable btn not pressed
+            self.hvps.disable_solenoid_current()
+            self.hvps.set_solenoid_current('0')
+
         self.current_stage_index += 1
         self.load_current_stage()
 
@@ -151,7 +166,7 @@ class HVPSTestWindow(QDialog):
         window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Beam Channel Test')
-        channel = 'BM'
+        self.channel = 'BM'
         pos_100V = self.test_voltages[0]
         pos_500V = self.test_voltages[1]
         pos_1kV = self.test_voltages[2]
@@ -178,27 +193,27 @@ class HVPSTestWindow(QDialog):
         # Create the three postive and three negative HV test buttons
         test_pos_100V_btn = QPushButton('Test 100 V')
         test_pos_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_100V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_100V)
         )
         test_pos_500V_btn = QPushButton('Test 500 V')
         test_pos_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_500V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_500V)
         )
         test_pos_1kV_btn = QPushButton('Test 1000 V')
         test_pos_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, pos_1kV)
         )
         test_neg_100V_btn = QPushButton('Test -100 V')
         test_neg_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_100V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_100V)
         )
         test_neg_500V_btn = QPushButton('Test -500 V')
         test_neg_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_500V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_500V)
         )
         test_neg_1kV_btn = QPushButton('Test -1000 V')
         test_neg_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, neg_1kV)
         )
 
         # Create the entry boxes for recording the measured voltage values
@@ -257,7 +272,7 @@ class HVPSTestWindow(QDialog):
         window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Extractor Channel Test')
-        channel = 'EX'
+        self.channel = 'EX'
         pos_100V = self.test_voltages[0]
         pos_500V = self.test_voltages[1]
         pos_1kV = self.test_voltages[2]
@@ -284,27 +299,27 @@ class HVPSTestWindow(QDialog):
         # Create the three postive and three negative HV test buttons
         test_pos_100V_btn = QPushButton('Test 100 V')
         test_pos_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_100V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_100V)
         )
         test_pos_500V_btn = QPushButton('Test 500 V')
         test_pos_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_500V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_500V)
         )
         test_pos_1kV_btn = QPushButton('Test 1000 V')
         test_pos_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, pos_1kV)
         )
         test_neg_100V_btn = QPushButton('Test -100 V')
         test_neg_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_100V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_100V)
         )
         test_neg_500V_btn = QPushButton('Test -500 V')
         test_neg_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_500V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_500V)
         )
         test_neg_1kV_btn = QPushButton('Test -1000 V')
         test_neg_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, neg_1kV)
         )
 
         # Create the entry boxes for recording the measured voltage values
@@ -363,7 +378,7 @@ class HVPSTestWindow(QDialog):
         window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 1 Channel Test')
-        channel = 'L1'
+        self.channel = 'L1'
         pos_100V = self.test_voltages[0]
         pos_500V = self.test_voltages[1]
         pos_1kV = self.test_voltages[2]
@@ -390,27 +405,27 @@ class HVPSTestWindow(QDialog):
         # Create the three postive and three negative HV test buttons
         test_pos_100V_btn = QPushButton('Test 100 V')
         test_pos_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_100V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_100V)
         )
         test_pos_500V_btn = QPushButton('Test 500 V')
         test_pos_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_500V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_500V)
         )
         test_pos_1kV_btn = QPushButton('Test 1000 V')
         test_pos_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, pos_1kV)
         )
         test_neg_100V_btn = QPushButton('Test -100 V')
         test_neg_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_100V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_100V)
         )
         test_neg_500V_btn = QPushButton('Test -500 V')
         test_neg_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_500V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_500V)
         )
         test_neg_1kV_btn = QPushButton('Test -1000 V')
         test_neg_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, neg_1kV)
         )
 
         # Create the entry boxes for recording the measured voltage values
@@ -469,7 +484,7 @@ class HVPSTestWindow(QDialog):
         window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 2 Channel Test')
-        channel = 'L2'
+        self.channel = 'L2'
         pos_100V = self.test_voltages[0]
         pos_500V = self.test_voltages[1]
         pos_1kV = self.test_voltages[2]
@@ -496,27 +511,27 @@ class HVPSTestWindow(QDialog):
         # Create the three postive and three negative HV test buttons
         test_pos_100V_btn = QPushButton('Test 100 V')
         test_pos_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_100V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_100V)
         )
         test_pos_500V_btn = QPushButton('Test 500 V')
         test_pos_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_500V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_500V)
         )
         test_pos_1kV_btn = QPushButton('Test 1000 V')
         test_pos_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, pos_1kV)
         )
         test_neg_100V_btn = QPushButton('Test -100 V')
         test_neg_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_100V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_100V)
         )
         test_neg_500V_btn = QPushButton('Test -500 V')
         test_neg_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_500V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_500V)
         )
         test_neg_1kV_btn = QPushButton('Test -1000 V')
         test_neg_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, neg_1kV)
         )
 
         # Create the entry boxes for recording the measured voltage values
@@ -575,7 +590,7 @@ class HVPSTestWindow(QDialog):
         window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 3 Channel Test')
-        channel = 'L3'
+        self.channel = 'L3'
         pos_100V = self.test_voltages[0]
         pos_500V = self.test_voltages[1]
         pos_1kV = self.test_voltages[2]
@@ -602,27 +617,27 @@ class HVPSTestWindow(QDialog):
         # Create the three postive and three negative HV test buttons
         test_pos_100V_btn = QPushButton('Test 100 V')
         test_pos_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_100V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_100V)
         )
         test_pos_500V_btn = QPushButton('Test 500 V')
         test_pos_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_500V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_500V)
         )
         test_pos_1kV_btn = QPushButton('Test 1000 V')
         test_pos_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, pos_1kV)
         )
         test_neg_100V_btn = QPushButton('Test -100 V')
         test_neg_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_100V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_100V)
         )
         test_neg_500V_btn = QPushButton('Test -500 V')
         test_neg_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_500V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_500V)
         )
         test_neg_1kV_btn = QPushButton('Test -1000 V')
         test_neg_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, neg_1kV)
         )
 
         # Create the entry boxes for recording the measured voltage values
@@ -681,7 +696,7 @@ class HVPSTestWindow(QDialog):
         window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 4 Channel Test')
-        channel = 'L4'
+        self.channel = 'L4'
         pos_100V = self.test_voltages[0]
         pos_500V = self.test_voltages[1]
         pos_1kV = self.test_voltages[2]
@@ -708,27 +723,27 @@ class HVPSTestWindow(QDialog):
         # Create the three postive and three negative HV test buttons
         test_pos_100V_btn = QPushButton('Test 100 V')
         test_pos_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_100V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_100V)
         )
         test_pos_500V_btn = QPushButton('Test 500 V')
         test_pos_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_500V)
+            lambda: self.handle_test_hv_btn(self.channel, pos_500V)
         )
         test_pos_1kV_btn = QPushButton('Test 1000 V')
         test_pos_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, pos_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, pos_1kV)
         )
         test_neg_100V_btn = QPushButton('Test -100 V')
         test_neg_100V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_100V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_100V)
         )
         test_neg_500V_btn = QPushButton('Test -500 V')
         test_neg_500V_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_500V)
+            lambda: self.handle_test_hv_btn(self.channel, neg_500V)
         )
         test_neg_1kV_btn = QPushButton('Test -1000 V')
         test_neg_1kV_btn.clicked.connect(
-            lambda: self.handle_test_hv_btn(channel, neg_1kV)
+            lambda: self.handle_test_hv_btn(self.channel, neg_1kV)
         )
 
         # Create the entry boxes for recording the measured voltage values
@@ -867,19 +882,30 @@ class HVPSTestWindow(QDialog):
         self.setLayout(self.main_layout)
 
     def handle_disable_hv_btn(self) -> None:
-        self.hvps.disable_high_voltage()
+        if self.get_hv_enable_state() is True:
+            self.hvps.disable_high_voltage()
+        self.hvps.set_voltage(self.channel, '0')
 
     def handle_test_hv_btn(self, channel: str, voltage: str) -> None:
-        self.hvps.enable_high_voltage()
+        if self.get_hv_enable_state() is False:
+            self.hvps.enable_high_voltage()
         self.hvps.set_voltage(channel, voltage)
 
     def handle_test_sol_btn(self, current: str) -> None:
-        self.hvps.enable_solenoid_current()
+        if self.get_sol_enable_state() is False:
+            self.hvps.enable_solenoid_current()
         self.hvps.set_solenoid_current(current)
 
     def handle_disable_sol_btn(self) -> None:
-        self.hvps.disable_solenoid_current()
+        if self.get_sol_enable_state() is True:
+            self.hvps.disable_solenoid_current()
 
     def closeEvent(self, event) -> None:
+        if self.get_hv_enable_state is True:
+            self.hvps.disable_high_voltage()
+            self.hvps.set_voltage(self.channel, '0')
+        if self.get_sol_enable_state is True:
+            self.hvps.disable_solenoid_current()
+            self.hvps.set_solenoid_current('0')
         self.window_closed.emit()
         super().closeEvent(event)
