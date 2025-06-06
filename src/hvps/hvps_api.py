@@ -1,6 +1,6 @@
 import socket
 from socket import SocketType
-from typing import Literal
+from typing import Literal, Optional
 
 Channels = Literal['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL']
 
@@ -35,6 +35,7 @@ class HVPSv3:
         """Sends a command to the HVPS and returns the response"""
         if not self.sock:
             raise ConnectionError('Socket is not connected')
+        print(f'Command: {query}')
         if not query.endswith('\n'):
             query += '\n'
 
@@ -187,3 +188,15 @@ class HVPSv3:
         response = self.send_query(command)
         print(f'get_state response: "{response}"')
         return response
+
+    def keep_alive(self) -> bool:
+        if self.sock:
+            try:
+                state = self.get_state()
+                if state:
+                    return True
+            except Exception as e:
+                print(f'keep_alive failed: {e}')
+                self.sock = None
+                return False
+        return False
