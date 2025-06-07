@@ -1,6 +1,6 @@
 import socket
 from socket import SocketType
-from typing import Literal, Optional
+from typing import Literal
 
 Channels = Literal['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL']
 
