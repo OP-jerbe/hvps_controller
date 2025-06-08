@@ -30,6 +30,15 @@ class HVPSv3:
     ) -> None:
         self.sock = sock
         self.occupied_channels = occupied_channels
+        self.all_channels: tuple[Channels, ...] = (
+            'BM',
+            'EX',
+            'L1',
+            'L2',
+            'L3',
+            'L4',
+            'SL',
+        )
 
     def send_query(self, query: str) -> str:
         """Sends a command to the HVPS and returns the response"""
