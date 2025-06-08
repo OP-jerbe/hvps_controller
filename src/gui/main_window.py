@@ -2,8 +2,22 @@ from pathlib import Path
 from socket import SocketType
 from typing import Optional
 
-from PySide6.QtCore import QEvent, QObject, QRegularExpression, Qt, QTimer, Signal
-from PySide6.QtGui import QAction, QIcon, QMouseEvent, QRegularExpressionValidator
+from PySide6.QtCore import (
+    QEvent,
+    QObject,
+    QRegularExpression,
+    Qt,
+    QThread,
+    QTimer,
+    Signal,
+)
+from PySide6.QtGui import (
+    QAction,
+    QCloseEvent,
+    QIcon,
+    QMouseEvent,
+    QRegularExpressionValidator,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -25,6 +39,7 @@ from helpers.constants import IP, PING_INTERVAL, PORT
 from helpers.helpers import close_socket, get_root_dir
 
 from ..hvps.hvps_api import HVPSv3
+from .bg_thread import Worker
 from .hvps_test_window import HVPSTestWindow
 from .open_socket_window import OpenSocketWindow
 
@@ -36,30 +51,83 @@ class MainWindow(QMainWindow):
         self.ip: str = IP
         self.port: str = str(PORT)
         self.sock: Optional[SocketType] = sock
-        self.hvps: HVPSv3
+        self.hvps: Optional[HVPSv3]
+
+        # Handle background threading
+        self.worker_thread = QThread()
+        self.worker = Worker()
+        self.worker.moveToThread(self.worker_thread)
+        self.worker_thread.started.connect(self.worker.start)
+        self.worker.updated.connect(self.update_readings)
+        self.worker_thread.start()
+        self.worker.stopped.connect(self.on_worker_stopped)
+        self._ready_to_quit = False
 
         # If there's a socket connection, instantiate the HVPS object
         # and begin pinging to prevent HVPS from timing out.
         if self.sock:
             self.hvps = HVPSv3(self.sock)
-            self.start_pinging_hvps()
+            # self.start_pinging_hvps() shouldn't need to pin hvps if bg_thread is working
+        else:
+            self.hvps = None
 
         self.installEventFilter(self)
         self.open_socket_window: Optional[OpenSocketWindow] = None
         self.hvps_test_window: Optional[HVPSTestWindow] = None
         self.create_gui()
 
-    def start_pinging_hvps(self) -> None:
+    def update_readings(self) -> None:
         """
-        Creates a QTimer to ping the HVPS at an interval set
-        by `PING_INTERVAL` from constants.py
+        Updates the QLabels to show the readback values from the HVPS.
+        TODO: Need to make sure that the values from the `get_voltage` and
+        `get_current` methods are formatted correctly to display numerical values.
         """
-        self.keep_alive_timer = QTimer(self)
-        self.keep_alive_timer.timeout.connect(self.handle_hvps_ping)
-        self.keep_alive_timer.start(PING_INTERVAL)
+
+        if self.hvps:
+            self.beam_Vreading = self.hvps.get_voltage('BM')
+            self.ext_Vreading = self.hvps.get_voltage('EX')
+            self.L1_Vreading = self.hvps.get_voltage('L1')
+            self.L2_Vreading = self.hvps.get_voltage('L2')
+            self.L3_Vreading = self.hvps.get_voltage('L3')
+            self.L4_Vreading = self.hvps.get_voltage('L4')
+            self.sol_Vreading = self.hvps.get_voltage('SL')
+
+            self.beam_Ireading = self.hvps.get_current('BM')
+            self.ext_Ireading = self.hvps.get_current('EX')
+            self.L1_Ireading = self.hvps.get_current('L1')
+            self.L2_Ireading = self.hvps.get_current('L2')
+            self.L3_Ireading = self.hvps.get_current('L3')
+            self.L4_Ireading = self.hvps.get_current('L4')
+            self.sol_Ireading = self.hvps.get_current('SL')
+
+            self.beam_Vreading_label.setText(f'{self.beam_Vreading} V')
+            self.ext_Vreading_label.setText(f'{self.ext_Vreading} V')
+            self.L1_Vreading_label.setText(f'{self.L1_Vreading} V')
+            self.L2_Vreading_label.setText(f'{self.L2_Vreading} V')
+            self.L3_Vreading_label.setText(f'{self.L3_Vreading} V')
+            self.L4_Vreading_label.setText(f'{self.L4_Vreading} V')
+            self.sol_Vreading_label.setText(f'{self.sol_Vreading} V')
+
+            self.beam_Ireading_label.setText(f'{self.beam_Ireading} uA')
+            self.ext_Ireading_label.setText(f'{self.ext_Ireading} uA')
+            self.L1_Ireading_label.setText(f'{self.L1_Ireading} uA')
+            self.L2_Ireading_label.setText(f'{self.L2_Ireading} uA')
+            self.L3_Ireading_label.setText(f'{self.L3_Ireading} uA')
+            self.L4_Ireading_label.setText(f'{self.L4_Ireading} uA')
+            self.sol_Ireading_label.setText(f'{self.sol_Ireading} A')
+
+    # Shouldn't need this function if bg_thread is working
+    # def start_pinging_hvps(self) -> None:
+    #     """
+    #     Creates a QTimer to ping the HVPS at an interval set
+    #     by `PING_INTERVAL` from constants.py
+    #     """
+    #     self.keep_alive_timer = QTimer(self)
+    #     self.keep_alive_timer.timeout.connect(self.handle_hvps_ping)
+    #     self.keep_alive_timer.start(PING_INTERVAL)
 
     def create_gui(self) -> None:
-        window_width = 300
+        window_width = 330
         window_height = 400
         button_width = 75
         self.setFixedSize(window_width, window_height)
@@ -79,6 +147,22 @@ class MainWindow(QMainWindow):
         self.L3_setting: str = '0'
         self.L4_setting: str = '0'
         self.sol_setting: str = '0'
+
+        self.beam_Vreading: str = '0 V'
+        self.ext_Vreading: str = '0 V'
+        self.L1_Vreading: str = '0 V'
+        self.L2_Vreading: str = '0 V'
+        self.L3_Vreading: str = '0 V'
+        self.L4_Vreading: str = '0 V'
+        self.sol_Vreading: str = '0 V'
+
+        self.beam_Ireading: str = '0 uA'
+        self.ext_Ireading: str = '0 uA'
+        self.L1_Ireading: str = '0 uA'
+        self.L2_Ireading: str = '0 uA'
+        self.L3_Ireading: str = '0 uA'
+        self.L4_Ireading: str = '0 uA'
+        self.sol_Ireading: str = '0 A'
 
         voltage_regex = QRegularExpression(r'^-?\d{1,5}$')
         voltage_validator = QRegularExpressionValidator(voltage_regex)
@@ -131,6 +215,7 @@ class MainWindow(QMainWindow):
         self.L4_label = QLabel('Lens 4')
         self.solenoid_label = QLabel('Solenoid')
 
+        self.setting_title_label = QLabel('Setting')
         self.beam_entry = QLineEdit(self.beam_setting)
         self.beam_entry.setValidator(voltage_validator)
         self.ext_entry = QLineEdit(self.ext_setting)
@@ -145,6 +230,25 @@ class MainWindow(QMainWindow):
         self.L4_entry.setValidator(voltage_validator)
         self.solenoid_entry = QLineEdit(self.sol_setting)
         self.solenoid_entry.setValidator(current_validator)
+
+        # Create the QLabels for holding the read back data
+        self.V_readback_title_label = QLabel('Voltage')
+        self.beam_Vreading_label = QLabel(self.beam_Vreading)
+        self.ext_Vreading_label = QLabel(self.ext_Vreading)
+        self.L1_Vreading_label = QLabel(self.L1_Vreading)
+        self.L2_Vreading_label = QLabel(self.L2_Vreading)
+        self.L3_Vreading_label = QLabel(self.L3_Vreading)
+        self.L4_Vreading_label = QLabel(self.L4_Vreading)
+        self.sol_Vreading_label = QLabel(self.sol_Vreading)
+
+        self.I_readback_title_label = QLabel('Current')
+        self.beam_Ireading_label = QLabel(self.beam_Ireading)
+        self.ext_Ireading_label = QLabel(self.ext_Ireading)
+        self.L1_Ireading_label = QLabel(self.L1_Ireading)
+        self.L2_Ireading_label = QLabel(self.L2_Ireading)
+        self.L3_Ireading_label = QLabel(self.L3_Ireading)
+        self.L4_Ireading_label = QLabel(self.L4_Ireading)
+        self.sol_Ireading_label = QLabel(self.sol_Ireading)
 
         # Group voltage entries
         self.voltage_entries: dict[QLineEdit, str] = {
@@ -181,11 +285,68 @@ class MainWindow(QMainWindow):
         entry_layout.addWidget(self.L4_entry)
         entry_layout.addWidget(self.solenoid_entry)
 
+        voltage_readback_layout = QVBoxLayout()
+        voltage_readback_layout.addWidget(
+            self.beam_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        voltage_readback_layout.addWidget(
+            self.ext_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        voltage_readback_layout.addWidget(
+            self.L1_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        voltage_readback_layout.addWidget(
+            self.L2_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        voltage_readback_layout.addWidget(
+            self.L3_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        voltage_readback_layout.addWidget(
+            self.L4_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        voltage_readback_layout.addWidget(
+            self.sol_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+
+        current_readback_layout = QVBoxLayout()
+        current_readback_layout.addWidget(
+            self.beam_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        current_readback_layout.addWidget(
+            self.ext_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        current_readback_layout.addWidget(
+            self.L1_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        current_readback_layout.addWidget(
+            self.L2_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        current_readback_layout.addWidget(
+            self.L3_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        current_readback_layout.addWidget(
+            self.L4_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        current_readback_layout.addWidget(
+            self.sol_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+
         main_layout = QGridLayout()
-        main_layout.addLayout(btn_layout, 0, 0, 1, 2)
-        main_layout.addWidget(QLabel(), 1, 0, 1, 2)  # spacer
-        main_layout.addLayout(label_layout, 2, 0)
-        main_layout.addLayout(entry_layout, 2, 1)
+        main_layout.addLayout(btn_layout, 0, 0, 1, 4)
+        main_layout.addWidget(QLabel(), 1, 0, 1, 4)  # spacer
+        main_layout.addWidget(
+            self.setting_title_label, 2, 1, alignment=Qt.AlignmentFlag.AlignCenter
+        )
+        main_layout.addWidget(
+            self.V_readback_title_label, 2, 2, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        main_layout.addWidget(
+            self.I_readback_title_label, 2, 3, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        main_layout.addLayout(label_layout, 3, 0)
+        main_layout.addLayout(entry_layout, 3, 1)
+        main_layout.addLayout(voltage_readback_layout, 3, 2)
+        main_layout.addLayout(current_readback_layout, 3, 3)
 
         container = QWidget()
         container.setLayout(main_layout)
@@ -220,7 +381,7 @@ class MainWindow(QMainWindow):
         """
         self.sock = sock
         self.hvps = HVPSv3(self.sock)
-        self.start_pinging_hvps()
+        # self.start_pinging_hvps() # shouldn't need to ping HVPS if bg_thread is working
         self.run_test_action.setEnabled(True)
         self.hv_enable_btn.setEnabled(True)
         self.sol_enable_btn.setEnabled(True)
@@ -284,52 +445,68 @@ class MainWindow(QMainWindow):
         Disables HV if the button has been checked.
         Enables HV if the button has not been checked.
         """
-        if not self.hv_enable_btn.isChecked():
-            self.hv_enable_btn.setText('OFF')
-            self.hvps.disable_high_voltage()
-        else:
-            self.hv_enable_btn.setText('ON')
-            self.hvps.enable_high_voltage()
-            for (line_edit, setting), channel in zip(
-                self.voltage_entries.items(), self.hvps.occupied_channels
-            ):
-                setting = line_edit.text()
-                self.hvps.set_voltage(channel, setting)
+        if self.hvps:
+            if not self.hv_enable_btn.isChecked():
+                self.hv_enable_btn.setText('OFF')
+                self.hvps.disable_high_voltage()
+            else:
+                self.hv_enable_btn.setText('ON')
+                self.hvps.enable_high_voltage()
+                for (line_edit, setting), channel in zip(
+                    self.voltage_entries.items(), self.hvps.occupied_channels
+                ):
+                    setting = line_edit.text()
+                    self.hvps.set_voltage(channel, setting)
 
     def handle_sol_enable_btn(self) -> None:
         """
         Disables solenoid current if the button has been checked.
         Enables solenoid current if the button has been checked.
         """
-        if not self.sol_enable_btn.isChecked():
-            self.sol_enable_btn.setText('OFF')
-            self.hvps.disable_solenoid_current()
-        else:
-            self.sol_enable_btn.setText('ON')
-            self.sol_setting = self.solenoid_entry.text()
-            self.hvps.enable_solenoid_current()
-            self.hvps.set_solenoid_current(self.sol_setting)
+        if self.hvps:
+            if not self.sol_enable_btn.isChecked():
+                self.sol_enable_btn.setText('OFF')
+                self.hvps.disable_solenoid_current()
+            else:
+                self.sol_enable_btn.setText('ON')
+                self.sol_setting = self.solenoid_entry.text()
+                self.hvps.enable_solenoid_current()
+                self.hvps.set_solenoid_current(self.sol_setting)
 
-    def handle_hvps_ping(self) -> None:
-        """
-        Handles what happens when the QTimer times out.
-        Checks if the HVPS is still connected.
-        If it is not, disable enable buttons and test option.
-        Set the socket to None and stop the timer that triggers the ping.
-        """
-        connected: bool = self.hvps.keep_alive()
-        if not connected:
-            self.run_test_action.setEnabled(False)
-            self.hv_enable_btn.setEnabled(False)
-            self.sol_enable_btn.setEnabled(False)
-            self.sock = None
-            self.keep_alive_timer.stop()
+    # Shouldn't need this method if bg_thread is working
+    # def handle_hvps_ping(self) -> None:
+    #     """
+    #     Handles what happens when the QTimer times out.
+    #     Checks if the HVPS is still connected.
+    #     If it is not, disable enable buttons and test option.
+    #     Set the socket to None and stop the timer that triggers the ping.
+    #     """
+    #     if self.hvps:
+    #         connected: bool = self.hvps.keep_alive()
+    #         if not connected:
+    #             self.run_test_action.setEnabled(False)
+    #             self.hv_enable_btn.setEnabled(False)
+    #             self.sol_enable_btn.setEnabled(False)
+    #             self.sock = None
+    #             self.keep_alive_timer.stop()
 
-    def closeEvent(self, event) -> None:
+    def on_worker_stopped(self) -> None:
+        self.worker_thread.quit()
+        self.worker_thread.wait()
+        self._ready_to_quit = True
+        self.close()  # Now close safely
+
+    def closeEvent(self, event: QCloseEvent) -> None:
         """
         Handles what happens when the application is closed.
         If there is socket connection, terminate the connection.
         """
+        if self._ready_to_quit:
+            event.accept()
+        else:
+            self._ready_to_quit = False
+            self.worker.stop_requested.emit()
+            event.ignore()  # wait for cleanup
         if self.sock:
             close_socket(self.sock)
         super().closeEvent(event)
