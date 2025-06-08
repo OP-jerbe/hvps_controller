@@ -47,6 +47,7 @@ from .open_socket_window import OpenSocketWindow
 class MainWindow(QMainWindow):
     def __init__(self, version: str, sock: Optional[SocketType] = None) -> None:
         super().__init__()
+        self.installEventFilter(self)
         self.version = version
         self.ip: str = IP
         self.port: str = str(PORT)
@@ -66,9 +67,64 @@ class MainWindow(QMainWindow):
         self.worker.stopped.connect(self.on_worker_stopped)
         self._ready_to_quit = False
 
-        self.installEventFilter(self)
+        # Create the secondary windows attributes
         self.open_socket_window: Optional[OpenSocketWindow] = None
         self.hvps_test_window: Optional[HVPSTestWindow] = None
+
+        # Create the attributes that will hold the voltage readback values
+        self.beam_Vreading: str = '0 V'
+        self.ext_Vreading: str = '0 V'
+        self.L1_Vreading: str = '0 V'
+        self.L2_Vreading: str = '0 V'
+        self.L3_Vreading: str = '0 V'
+        self.L4_Vreading: str = '0 V'
+        self.sol_Vreading: str = '0 V'
+        self.voltage_readings: tuple[str, ...] = (
+            self.beam_Vreading,
+            self.ext_Vreading,
+            self.L1_Vreading,
+            self.L2_Vreading,
+            self.L3_Vreading,
+            self.L4_Vreading,
+            self.sol_Vreading,
+        )
+
+        # Create the attributes that will hold the current readback values
+        self.beam_Ireading: str = '0 uA'
+        self.ext_Ireading: str = '0 uA'
+        self.L1_Ireading: str = '0 uA'
+        self.L2_Ireading: str = '0 uA'
+        self.L3_Ireading: str = '0 uA'
+        self.L4_Ireading: str = '0 uA'
+        self.sol_Ireading: str = '0 uA'
+        self.current_readings: tuple[str, ...] = (
+            self.beam_Ireading,
+            self.ext_Ireading,
+            self.L1_Ireading,
+            self.L2_Ireading,
+            self.L3_Ireading,
+            self.L4_Ireading,
+            self.sol_Ireading,
+        )
+
+        # Create the attributes that will hold the channel settings
+        self.beam_setting: str = '0'
+        self.ext_setting: str = '0'
+        self.L1_setting: str = '0'
+        self.L2_setting: str = '0'
+        self.L3_setting: str = '0'
+        self.L4_setting: str = '0'
+        self.sol_setting: str = '0'
+        self.settings: tuple[str, ...] = (
+            self.beam_setting,
+            self.ext_setting,
+            self.L1_setting,
+            self.L2_setting,
+            self.L3_setting,
+            self.L4_setting,
+            self.sol_setting,
+        )
+
         self.create_gui()
 
     def update_readings(self) -> None:
@@ -78,38 +134,47 @@ class MainWindow(QMainWindow):
         `get_current` methods are formatted correctly to display numerical values.
         """
 
-        if self.hvps:
-            self.beam_Vreading = self.hvps.get_voltage('BM')
-            self.ext_Vreading = self.hvps.get_voltage('EX')
-            self.L1_Vreading = self.hvps.get_voltage('L1')
-            self.L2_Vreading = self.hvps.get_voltage('L2')
-            self.L3_Vreading = self.hvps.get_voltage('L3')
-            self.L4_Vreading = self.hvps.get_voltage('L4')
-            self.sol_Vreading = self.hvps.get_voltage('SL')
+        if not self.hvps:
+            return
 
-            self.beam_Ireading = self.hvps.get_current('BM')
-            self.ext_Ireading = self.hvps.get_current('EX')
-            self.L1_Ireading = self.hvps.get_current('L1')
-            self.L2_Ireading = self.hvps.get_current('L2')
-            self.L3_Ireading = self.hvps.get_current('L3')
-            self.L4_Ireading = self.hvps.get_current('L4')
-            self.sol_Ireading = self.hvps.get_current('SL')
+        for v_reading, i_reading, channel in zip(
+            self.voltage_readings, self.current_readings, self.hvps.all_channels
+        ):
+            v_reading = self.hvps.get_voltage(channel)
+            i_reading = self.hvps.get_current(channel)
 
-            self.beam_Vreading_label.setText(f'{self.beam_Vreading} V')
-            self.ext_Vreading_label.setText(f'{self.ext_Vreading} V')
-            self.L1_Vreading_label.setText(f'{self.L1_Vreading} V')
-            self.L2_Vreading_label.setText(f'{self.L2_Vreading} V')
-            self.L3_Vreading_label.setText(f'{self.L3_Vreading} V')
-            self.L4_Vreading_label.setText(f'{self.L4_Vreading} V')
-            self.sol_Vreading_label.setText(f'{self.sol_Vreading} V')
+        # Delete if the for loop above works.
+        # self.beam_Vreading = self.hvps.get_voltage('BM')
+        # self.ext_Vreading = self.hvps.get_voltage('EX')
+        # self.L1_Vreading = self.hvps.get_voltage('L1')
+        # self.L2_Vreading = self.hvps.get_voltage('L2')
+        # self.L3_Vreading = self.hvps.get_voltage('L3')
+        # self.L4_Vreading = self.hvps.get_voltage('L4')
+        # self.sol_Vreading = self.hvps.get_voltage('SL')
 
-            self.beam_Ireading_label.setText(f'{self.beam_Ireading} uA')
-            self.ext_Ireading_label.setText(f'{self.ext_Ireading} uA')
-            self.L1_Ireading_label.setText(f'{self.L1_Ireading} uA')
-            self.L2_Ireading_label.setText(f'{self.L2_Ireading} uA')
-            self.L3_Ireading_label.setText(f'{self.L3_Ireading} uA')
-            self.L4_Ireading_label.setText(f'{self.L4_Ireading} uA')
-            self.sol_Ireading_label.setText(f'{self.sol_Ireading} A')
+        # self.beam_Ireading = self.hvps.get_current('BM')
+        # self.ext_Ireading = self.hvps.get_current('EX')
+        # self.L1_Ireading = self.hvps.get_current('L1')
+        # self.L2_Ireading = self.hvps.get_current('L2')
+        # self.L3_Ireading = self.hvps.get_current('L3')
+        # self.L4_Ireading = self.hvps.get_current('L4')
+        # self.sol_Ireading = self.hvps.get_current('SL')
+
+        self.beam_Vreading_label.setText(f'{self.beam_Vreading} V')
+        self.ext_Vreading_label.setText(f'{self.ext_Vreading} V')
+        self.L1_Vreading_label.setText(f'{self.L1_Vreading} V')
+        self.L2_Vreading_label.setText(f'{self.L2_Vreading} V')
+        self.L3_Vreading_label.setText(f'{self.L3_Vreading} V')
+        self.L4_Vreading_label.setText(f'{self.L4_Vreading} V')
+        self.sol_Vreading_label.setText(f'{self.sol_Vreading} V')
+
+        self.beam_Ireading_label.setText(f'{self.beam_Ireading} uA')
+        self.ext_Ireading_label.setText(f'{self.ext_Ireading} uA')
+        self.L1_Ireading_label.setText(f'{self.L1_Ireading} uA')
+        self.L2_Ireading_label.setText(f'{self.L2_Ireading} uA')
+        self.L3_Ireading_label.setText(f'{self.L3_Ireading} uA')
+        self.L4_Ireading_label.setText(f'{self.L4_Ireading} uA')
+        self.sol_Ireading_label.setText(f'{self.sol_Ireading} A')
 
     def create_gui(self) -> None:
         window_width = 330
@@ -124,30 +189,6 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(
             self.styleSheet() + """QLineEdit, QTextEdit {color: lightgreen;}"""
         )
-
-        self.beam_setting: str = '0'
-        self.ext_setting: str = '0'
-        self.L1_setting: str = '0'
-        self.L2_setting: str = '0'
-        self.L3_setting: str = '0'
-        self.L4_setting: str = '0'
-        self.sol_setting: str = '0'
-
-        self.beam_Vreading: str = '0 V'
-        self.ext_Vreading: str = '0 V'
-        self.L1_Vreading: str = '0 V'
-        self.L2_Vreading: str = '0 V'
-        self.L3_Vreading: str = '0 V'
-        self.L4_Vreading: str = '0 V'
-        self.sol_Vreading: str = '0 V'
-
-        self.beam_Ireading: str = '0 uA'
-        self.ext_Ireading: str = '0 uA'
-        self.L1_Ireading: str = '0 uA'
-        self.L2_Ireading: str = '0 uA'
-        self.L3_Ireading: str = '0 uA'
-        self.L4_Ireading: str = '0 uA'
-        self.sol_Ireading: str = '0 A'
 
         voltage_regex = QRegularExpression(r'^-?\d{1,5}$')
         voltage_validator = QRegularExpressionValidator(voltage_regex)
