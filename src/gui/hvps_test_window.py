@@ -35,6 +35,10 @@ class HVPSTestWindow(QDialog):
         self.hvps: HVPSv3 = HVPSv3(sock)
         self.test_voltages: tuple[str, ...] = ('100', '500', '1000')  # volts
         self.test_currents: tuple[str, ...] = ('0.3', '1.2', '2.5')  # amps
+        self.channel_readbacks: list[str] = []
+        self.channel_measurements: list[str] = []
+        self.measurements: dict[str, list[str]] = {}
+        self.readbacks: dict[str, list[str]] = {}
         self.installEventFilter(self)
         self.root_dir: Path = get_root_dir()
         icon_path: str = str(self.root_dir / 'assets' / 'hvps_icon.ico')
@@ -158,6 +162,8 @@ class HVPSTestWindow(QDialog):
             self.hvps.disable_solenoid_current()
             self.hvps.set_solenoid_current('0')
 
+        self.measurements[self.channel] = self.channel_measurements
+        self.readbacks[self.channel] = self.channel_readbacks
         self.current_stage_index += 1
         self.load_current_stage()
 
@@ -219,16 +225,46 @@ class HVPSTestWindow(QDialog):
         # Create the entry boxes for recording the measured voltage values
         self.beam_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.beam_pos_100V_measurement.setValidator(self.lv_validator)
+        self.beam_pos_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.beam_pos_100V_measurement.text()
+            )
+        )
         self.beam_pos_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.beam_pos_500V_measurement.setValidator(self.lv_validator)
+        self.beam_pos_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.beam_pos_500V_measurement.text()
+            )
+        )
         self.beam_pos_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.beam_pos_1kV_measurement.setValidator(self.hv_validator)
+        self.beam_pos_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.beam_pos_1kV_measurement.text()
+            )
+        )
         self.beam_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.beam_neg_100V_measurement.setValidator(self.lv_validator)
+        self.beam_neg_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.beam_neg_100V_measurement.text()
+            )
+        )
         self.beam_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.beam_neg_500V_measurement.setValidator(self.lv_validator)
+        self.beam_neg_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.beam_neg_500V_measurement.text()
+            )
+        )
         self.beam_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.beam_neg_1kV_measurement.setValidator(self.hv_validator)
+        self.beam_neg_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.beam_neg_1kV_measurement.text()
+            )
+        )
 
         disable_hv_btn = QPushButton('Disable HV')
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -325,16 +361,46 @@ class HVPSTestWindow(QDialog):
         # Create the entry boxes for recording the measured voltage values
         self.ext_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.ext_pos_100V_measurement.setValidator(self.lv_validator)
+        self.ext_pos_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.ext_pos_100V_measurement.text()
+            )
+        )
         self.ext_pos_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.ext_pos_500V_measurement.setValidator(self.lv_validator)
+        self.ext_pos_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.ext_pos_500V_measurement.text()
+            )
+        )
         self.ext_pos_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.ext_pos_1kV_measurement.setValidator(self.hv_validator)
+        self.ext_pos_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.ext_pos_1kV_measurement.text()
+            )
+        )
         self.ext_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.ext_neg_100V_measurement.setValidator(self.lv_validator)
+        self.ext_neg_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.ext_neg_100V_measurement.text()
+            )
+        )
         self.ext_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.ext_neg_500V_measurement.setValidator(self.lv_validator)
+        self.ext_neg_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.ext_neg_500V_measurement.text()
+            )
+        )
         self.ext_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.ext_neg_1kV_measurement.setValidator(self.hv_validator)
+        self.ext_neg_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.ext_neg_1kV_measurement.text()
+            )
+        )
 
         disable_hv_btn = QPushButton('Disable HV')
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -431,16 +497,46 @@ class HVPSTestWindow(QDialog):
         # Create the entry boxes for recording the measured voltage values
         self.L1_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L1_pos_100V_measurement.setValidator(self.lv_validator)
+        self.L1_pos_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L1_pos_100V_measurement.text()
+            )
+        )
         self.L1_pos_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L1_pos_500V_measurement.setValidator(self.lv_validator)
+        self.L1_pos_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L1_pos_500V_measurement.text()
+            )
+        )
         self.L1_pos_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L1_pos_1kV_measurement.setValidator(self.hv_validator)
+        self.L1_pos_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L1_pos_1kV_measurement.text()
+            )
+        )
         self.L1_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L1_neg_100V_measurement.setValidator(self.lv_validator)
+        self.L1_neg_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L1_neg_100V_measurement.text()
+            )
+        )
         self.L1_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L1_neg_500V_measurement.setValidator(self.lv_validator)
+        self.L1_neg_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L1_neg_500V_measurement.text()
+            )
+        )
         self.L1_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L1_neg_1kV_measurement.setValidator(self.hv_validator)
+        self.L1_neg_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L1_neg_1kV_measurement.text()
+            )
+        )
 
         disable_hv_btn = QPushButton('Disable HV')
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -537,16 +633,46 @@ class HVPSTestWindow(QDialog):
         # Create the entry boxes for recording the measured voltage values
         self.L2_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L2_pos_100V_measurement.setValidator(self.lv_validator)
+        self.L2_pos_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L2_pos_100V_measurement.text()
+            )
+        )
         self.L2_pos_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L2_pos_500V_measurement.setValidator(self.lv_validator)
+        self.L2_pos_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L2_pos_500V_measurement.text()
+            )
+        )
         self.L2_pos_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L2_pos_1kV_measurement.setValidator(self.hv_validator)
+        self.L2_pos_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L2_pos_1kV_measurement.text()
+            )
+        )
         self.L2_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L2_neg_100V_measurement.setValidator(self.lv_validator)
+        self.L2_neg_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L2_neg_100V_measurement.text()
+            )
+        )
         self.L2_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L2_neg_500V_measurement.setValidator(self.lv_validator)
+        self.L2_neg_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L2_neg_500V_measurement.text()
+            )
+        )
         self.L2_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L2_neg_1kV_measurement.setValidator(self.hv_validator)
+        self.L2_neg_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L2_neg_1kV_measurement.text()
+            )
+        )
 
         disable_hv_btn = QPushButton('Disable HV')
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -643,16 +769,46 @@ class HVPSTestWindow(QDialog):
         # Create the entry boxes for recording the measured voltage values
         self.L3_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L3_pos_100V_measurement.setValidator(self.lv_validator)
+        self.L3_pos_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L3_pos_100V_measurement.text()
+            )
+        )
         self.L3_pos_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L3_pos_500V_measurement.setValidator(self.lv_validator)
+        self.L3_pos_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L3_pos_500V_measurement.text()
+            )
+        )
         self.L3_pos_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L3_pos_1kV_measurement.setValidator(self.hv_validator)
+        self.L3_pos_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L3_pos_1kV_measurement.text()
+            )
+        )
         self.L3_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L3_neg_100V_measurement.setValidator(self.lv_validator)
+        self.L3_neg_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L3_neg_100V_measurement.text()
+            )
+        )
         self.L3_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L3_neg_500V_measurement.setValidator(self.lv_validator)
+        self.L3_neg_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L3_neg_500V_measurement.text()
+            )
+        )
         self.L3_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L3_neg_1kV_measurement.setValidator(self.hv_validator)
+        self.L3_neg_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L3_neg_1kV_measurement.text()
+            )
+        )
 
         disable_hv_btn = QPushButton('Disable HV')
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -749,16 +905,46 @@ class HVPSTestWindow(QDialog):
         # Create the entry boxes for recording the measured voltage values
         self.L4_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L4_pos_100V_measurement.setValidator(self.lv_validator)
+        self.L4_pos_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L4_pos_100V_measurement.text()
+            )
+        )
         self.L4_pos_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L4_pos_500V_measurement.setValidator(self.lv_validator)
+        self.L4_pos_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L4_pos_500V_measurement.text()
+            )
+        )
         self.L4_pos_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L4_pos_1kV_measurement.setValidator(self.hv_validator)
+        self.L4_pos_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L4_pos_1kV_measurement.text()
+            )
+        )
         self.L4_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L4_neg_100V_measurement.setValidator(self.lv_validator)
+        self.L4_neg_100V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L4_neg_100V_measurement.text()
+            )
+        )
         self.L4_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L4_neg_500V_measurement.setValidator(self.lv_validator)
+        self.L4_neg_500V_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L4_neg_500V_measurement.text()
+            )
+        )
         self.L4_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L4_neg_1kV_measurement.setValidator(self.hv_validator)
+        self.L4_neg_1kV_measurement.returnPressed.connect(
+            lambda: self.handle_voltage_returnPressed(
+                self.channel, self.L4_neg_1kV_measurement.text()
+            )
+        )
 
         disable_hv_btn = QPushButton('Disable HV')
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -843,10 +1029,19 @@ class HVPSTestWindow(QDialog):
         # Create the entry boxes for recording the measured current values
         self.current1_measurement = QLineEdit(placeholderText='Enter measurement')
         self.current1_measurement.setValidator(self.sol_validator)
+        self.current1_measurement.returnPressed.connect(
+            lambda: self.handle_current_returnPressed(self.current1_measurement.text())
+        )
         self.current2_measurement = QLineEdit(placeholderText='Enter measurement')
         self.current2_measurement.setValidator(self.sol_validator)
+        self.current2_measurement.returnPressed.connect(
+            lambda: self.handle_current_returnPressed(self.current2_measurement.text())
+        )
         self.current3_measurement = QLineEdit(placeholderText='Enter measurement')
         self.current3_measurement.setValidator(self.sol_validator)
+        self.current3_measurement.returnPressed.connect(
+            lambda: self.handle_current_returnPressed(self.current3_measurement.text())
+        )
 
         disable_sol_btn = QPushButton('Disable Solenoid')
         disable_sol_btn.clicked.connect(self.handle_disable_sol_btn)
@@ -895,6 +1090,16 @@ class HVPSTestWindow(QDialog):
         if self.get_sol_enable_state() is False:
             self.hvps.enable_solenoid_current()
         self.hvps.set_solenoid_current(current)
+
+    def handle_voltage_returnPressed(self, channel: str, measurement: str) -> None:
+        readback = self.hvps.get_voltage(channel)
+        self.channel_readbacks.append(readback)
+        self.channel_measurements.append(measurement)
+
+    def handle_current_returnPressed(self, measurement: str) -> None:
+        readback = self.hvps.get_current('SL')
+        self.channel_readbacks.append(readback)
+        self.channel_measurements.append(measurement)
 
     def handle_disable_sol_btn(self) -> None:
         if self.get_sol_enable_state() is True:
