@@ -137,11 +137,20 @@ class MainWindow(QMainWindow):
         if not self.hvps:
             return
 
-        for v_reading, i_reading, channel in zip(
-            self.voltage_readings, self.current_readings, self.hvps.all_channels
+        for v_reading, i_reading, v_label, i_label, channel in zip(
+            self.voltage_readings,
+            self.current_readings,
+            self.Vreading_labels,
+            self.Ireading_labels,
+            self.hvps.all_channels,
         ):
             v_reading = self.hvps.get_voltage(channel)
             i_reading = self.hvps.get_current(channel)
+            v_label.setText(f'{v_reading} V')
+            if channel != 'SL':
+                i_label.setText(f'{i_reading} uA')
+            else:
+                i_label.setText(f'{i_reading} A')
 
         # Delete if the for loop above works.
         # self.beam_Vreading = self.hvps.get_voltage('BM')
@@ -266,6 +275,15 @@ class MainWindow(QMainWindow):
         self.L3_Vreading_label = QLabel(self.L3_Vreading)
         self.L4_Vreading_label = QLabel(self.L4_Vreading)
         self.sol_Vreading_label = QLabel(self.sol_Vreading)
+        self.Vreading_labels: tuple[QLabel, ...] = (
+            self.beam_Vreading_label,
+            self.ext_Vreading_label,
+            self.L1_Vreading_label,
+            self.L2_Vreading_label,
+            self.L3_Vreading_label,
+            self.L4_Vreading_label,
+            self.sol_Vreading_label,
+        )
 
         self.I_readback_title_label = QLabel('Current')
         self.beam_Ireading_label = QLabel(self.beam_Ireading)
@@ -275,6 +293,15 @@ class MainWindow(QMainWindow):
         self.L3_Ireading_label = QLabel(self.L3_Ireading)
         self.L4_Ireading_label = QLabel(self.L4_Ireading)
         self.sol_Ireading_label = QLabel(self.sol_Ireading)
+        self.Ireading_labels: tuple[QLabel, ...] = (
+            self.beam_Ireading_label,
+            self.ext_Ireading_label,
+            self.L1_Ireading_label,
+            self.L2_Ireading_label,
+            self.L3_Ireading_label,
+            self.L4_Ireading_label,
+            self.sol_Ireading_label,
+        )
 
         # Group voltage entries
         self.voltage_entries: dict[QLineEdit, str] = {
