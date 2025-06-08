@@ -55,7 +55,6 @@ class MainWindow(QMainWindow):
         self.hvps: Optional[HVPSv3] = None
         if self.sock:
             self.hvps = HVPSv3(self.sock)
-            # self.start_pinging_hvps() ########## shouldn't need to ping hvps if bg_thread is working ########
 
         # Handle background threading
         self.worker_thread = QThread()
@@ -151,23 +150,6 @@ class MainWindow(QMainWindow):
                 i_label.setText(f'{i_reading} uA')
             else:
                 i_label.setText(f'{i_reading} A')
-
-        # Delete if the for loop above works.
-        # self.beam_Vreading = self.hvps.get_voltage('BM')
-        # self.ext_Vreading = self.hvps.get_voltage('EX')
-        # self.L1_Vreading = self.hvps.get_voltage('L1')
-        # self.L2_Vreading = self.hvps.get_voltage('L2')
-        # self.L3_Vreading = self.hvps.get_voltage('L3')
-        # self.L4_Vreading = self.hvps.get_voltage('L4')
-        # self.sol_Vreading = self.hvps.get_voltage('SL')
-
-        # self.beam_Ireading = self.hvps.get_current('BM')
-        # self.ext_Ireading = self.hvps.get_current('EX')
-        # self.L1_Ireading = self.hvps.get_current('L1')
-        # self.L2_Ireading = self.hvps.get_current('L2')
-        # self.L3_Ireading = self.hvps.get_current('L3')
-        # self.L4_Ireading = self.hvps.get_current('L4')
-        # self.sol_Ireading = self.hvps.get_current('SL')
 
         self.beam_Vreading_label.setText(f'{self.beam_Vreading} V')
         self.ext_Vreading_label.setText(f'{self.ext_Vreading} V')
@@ -577,30 +559,3 @@ class MainWindow(QMainWindow):
                 self.hvps.set_solenoid_current(self.sol_entry.text())
 
         focused_widget.clearFocus()
-
-    # Shouldn't need this function if bg_thread is working
-    # def start_pinging_hvps(self) -> None:
-    #     """
-    #     Creates a QTimer to ping the HVPS at an interval set
-    #     by `PING_INTERVAL` from constants.py
-    #     """
-    #     self.keep_alive_timer = QTimer(self)
-    #     self.keep_alive_timer.timeout.connect(self.handle_hvps_ping)
-    #     self.keep_alive_timer.start(PING_INTERVAL)
-
-    # Shouldn't need this method if bg_thread is working
-    # def handle_hvps_ping(self) -> None:
-    #     """
-    #     Handles what happens when the QTimer times out.
-    #     Checks if the HVPS is still connected.
-    #     If it is not, disable enable buttons and test option.
-    #     Set the socket to None and stop the timer that triggers the ping.
-    #     """
-    #     if self.hvps:
-    #         connected: bool = self.hvps.keep_alive()
-    #         if not connected:
-    #             self.run_test_action.setEnabled(False)
-    #             self.hv_enable_btn.setEnabled(False)
-    #             self.sol_enable_btn.setEnabled(False)
-    #             self.sock = None
-    #             self.keep_alive_timer.stop()
