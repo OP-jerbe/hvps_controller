@@ -51,7 +51,10 @@ class MainWindow(QMainWindow):
         self.ip: str = IP
         self.port: str = str(PORT)
         self.sock: Optional[SocketType] = sock
-        self.hvps: Optional[HVPSv3]
+        self.hvps: Optional[HVPSv3] = None
+        if self.sock:
+            self.hvps = HVPSv3(self.sock)
+            # self.start_pinging_hvps() ########## shouldn't need to ping hvps if bg_thread is working ########
 
         # Handle background threading
         self.worker_thread = QThread()
@@ -62,14 +65,6 @@ class MainWindow(QMainWindow):
         self.worker_thread.start()
         self.worker.stopped.connect(self.on_worker_stopped)
         self._ready_to_quit = False
-
-        # If there's a socket connection, instantiate the HVPS object
-        # and begin pinging to prevent HVPS from timing out.
-        if self.sock:
-            self.hvps = HVPSv3(self.sock)
-            # self.start_pinging_hvps() shouldn't need to pin hvps if bg_thread is working
-        else:
-            self.hvps = None
 
         self.installEventFilter(self)
         self.open_socket_window: Optional[OpenSocketWindow] = None
@@ -116,16 +111,6 @@ class MainWindow(QMainWindow):
             self.L4_Ireading_label.setText(f'{self.L4_Ireading} uA')
             self.sol_Ireading_label.setText(f'{self.sol_Ireading} A')
 
-    # Shouldn't need this function if bg_thread is working
-    # def start_pinging_hvps(self) -> None:
-    #     """
-    #     Creates a QTimer to ping the HVPS at an interval set
-    #     by `PING_INTERVAL` from constants.py
-    #     """
-    #     self.keep_alive_timer = QTimer(self)
-    #     self.keep_alive_timer.timeout.connect(self.handle_hvps_ping)
-    #     self.keep_alive_timer.start(PING_INTERVAL)
-
     def create_gui(self) -> None:
         window_width = 330
         window_height = 400
@@ -166,7 +151,7 @@ class MainWindow(QMainWindow):
 
         voltage_regex = QRegularExpression(r'^-?\d{1,5}$')
         voltage_validator = QRegularExpressionValidator(voltage_regex)
-        current_regex = QRegularExpression(r'^\d{0,1}+\.\d{1,2}$')
+        current_regex = QRegularExpression(r'^(\d+)?(\.\d{1,2})?$')
         current_validator = QRegularExpressionValidator(current_regex)
 
         # Create the QAction objects for the menus
@@ -228,8 +213,8 @@ class MainWindow(QMainWindow):
         self.L3_entry.setValidator(voltage_validator)
         self.L4_entry = QLineEdit(self.L4_setting)
         self.L4_entry.setValidator(voltage_validator)
-        self.solenoid_entry = QLineEdit(self.sol_setting)
-        self.solenoid_entry.setValidator(current_validator)
+        self.sol_entry = QLineEdit(self.sol_setting)
+        self.sol_entry.setValidator(current_validator)
 
         # Create the QLabels for holding the read back data
         self.V_readback_title_label = QLabel('Voltage')
@@ -260,6 +245,11 @@ class MainWindow(QMainWindow):
             self.L4_entry: self.L4_setting,
         }
 
+        # Clear the focus of the entry box when the enter button is pressed.
+        for entry, _ in self.voltage_entries.items():
+            entry.returnPressed.connect(self.handle_return_pressed)
+        self.sol_entry.returnPressed.connect(self.handle_return_pressed)
+
         # Set the layout
         btn_layout = QGridLayout()
         btn_layout.addWidget(self.hv_btn_label, 0, 0, Qt.AlignmentFlag.AlignCenter)
@@ -283,7 +273,7 @@ class MainWindow(QMainWindow):
         entry_layout.addWidget(self.L2_entry)
         entry_layout.addWidget(self.L3_entry)
         entry_layout.addWidget(self.L4_entry)
-        entry_layout.addWidget(self.solenoid_entry)
+        entry_layout.addWidget(self.sol_entry)
 
         voltage_readback_layout = QVBoxLayout()
         voltage_readback_layout.addWidget(
@@ -445,18 +435,20 @@ class MainWindow(QMainWindow):
         Disables HV if the button has been checked.
         Enables HV if the button has not been checked.
         """
-        if self.hvps:
-            if not self.hv_enable_btn.isChecked():
-                self.hv_enable_btn.setText('OFF')
-                self.hvps.disable_high_voltage()
-            else:
-                self.hv_enable_btn.setText('ON')
-                self.hvps.enable_high_voltage()
-                for (line_edit, setting), channel in zip(
-                    self.voltage_entries.items(), self.hvps.occupied_channels
-                ):
-                    setting = line_edit.text()
-                    self.hvps.set_voltage(channel, setting)
+        if not self.hvps:
+            return
+
+        if not self.hv_enable_btn.isChecked():
+            self.hv_enable_btn.setText('OFF')
+            self.hvps.disable_high_voltage()
+        else:
+            self.hv_enable_btn.setText('ON')
+            self.hvps.enable_high_voltage()
+            for (line_edit, setting), channel in zip(
+                self.voltage_entries.items(), self.hvps.occupied_channels
+            ):
+                setting = line_edit.text()
+                self.hvps.set_voltage(channel, setting)
 
     def handle_sol_enable_btn(self) -> None:
         """
@@ -469,26 +461,9 @@ class MainWindow(QMainWindow):
                 self.hvps.disable_solenoid_current()
             else:
                 self.sol_enable_btn.setText('ON')
-                self.sol_setting = self.solenoid_entry.text()
+                self.sol_setting = self.sol_entry.text()
                 self.hvps.enable_solenoid_current()
                 self.hvps.set_solenoid_current(self.sol_setting)
-
-    # Shouldn't need this method if bg_thread is working
-    # def handle_hvps_ping(self) -> None:
-    #     """
-    #     Handles what happens when the QTimer times out.
-    #     Checks if the HVPS is still connected.
-    #     If it is not, disable enable buttons and test option.
-    #     Set the socket to None and stop the timer that triggers the ping.
-    #     """
-    #     if self.hvps:
-    #         connected: bool = self.hvps.keep_alive()
-    #         if not connected:
-    #             self.run_test_action.setEnabled(False)
-    #             self.hv_enable_btn.setEnabled(False)
-    #             self.sol_enable_btn.setEnabled(False)
-    #             self.sock = None
-    #             self.keep_alive_timer.stop()
 
     def on_worker_stopped(self) -> None:
         self.worker_thread.quit()
@@ -510,3 +485,54 @@ class MainWindow(QMainWindow):
         if self.sock:
             close_socket(self.sock)
         super().closeEvent(event)
+
+    def handle_return_pressed(self) -> None:
+        focused_widget = self.focusWidget()
+        if not self.hvps:
+            focused_widget.clearFocus()
+            return
+
+        match focused_widget:
+            case self.beam_entry:
+                self.hvps.set_voltage('BM', self.beam_entry.text())
+            case self.ext_entry:
+                self.hvps.set_voltage('EX', self.ext_entry.text())
+            case self.L1_entry:
+                self.hvps.set_voltage('L1', self.L1_entry.text())
+            case self.L2_entry:
+                self.hvps.set_voltage('L2', self.L2_entry.text())
+            case self.L3_entry:
+                self.hvps.set_voltage('L3', self.L3_entry.text())
+            case self.L4_entry:
+                self.hvps.set_voltage('L4', self.L4_entry.text())
+            case self.sol_entry:
+                self.hvps.set_solenoid_current(self.sol_entry.text())
+
+        focused_widget.clearFocus()
+
+    # Shouldn't need this function if bg_thread is working
+    # def start_pinging_hvps(self) -> None:
+    #     """
+    #     Creates a QTimer to ping the HVPS at an interval set
+    #     by `PING_INTERVAL` from constants.py
+    #     """
+    #     self.keep_alive_timer = QTimer(self)
+    #     self.keep_alive_timer.timeout.connect(self.handle_hvps_ping)
+    #     self.keep_alive_timer.start(PING_INTERVAL)
+
+    # Shouldn't need this method if bg_thread is working
+    # def handle_hvps_ping(self) -> None:
+    #     """
+    #     Handles what happens when the QTimer times out.
+    #     Checks if the HVPS is still connected.
+    #     If it is not, disable enable buttons and test option.
+    #     Set the socket to None and stop the timer that triggers the ping.
+    #     """
+    #     if self.hvps:
+    #         connected: bool = self.hvps.keep_alive()
+    #         if not connected:
+    #             self.run_test_action.setEnabled(False)
+    #             self.hv_enable_btn.setEnabled(False)
+    #             self.sol_enable_btn.setEnabled(False)
+    #             self.sock = None
+    #             self.keep_alive_timer.stop()
