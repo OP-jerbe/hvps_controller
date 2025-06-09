@@ -1,7 +1,4 @@
-import sys
-
-from PySide6.QtCore import QObject, QThread, QTimer, Signal
-from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWidget
+from PySide6.QtCore import QObject, QTimer, Signal
 
 
 class Worker(QObject):
