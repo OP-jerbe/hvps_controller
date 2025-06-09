@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
 )
 from qt_material import apply_stylesheet
 
-from helpers.constants import IP, PING_INTERVAL, PORT
+from helpers.constants import IP, PORT
 from helpers.helpers import close_socket, get_root_dir
 
 from ..hvps.hvps_api import HVPSv3
@@ -43,6 +43,8 @@ from ..pdf import HVPSReport
 from .bg_thread import Worker
 from .hvps_test_window import HVPSTestWindow
 from .open_socket_window import OpenSocketWindow
+
+# TODO: Figure out why the voltage and current readbacks are having their digits cut off sometimes.
 
 
 class MainWindow(QMainWindow):
@@ -149,8 +151,6 @@ class MainWindow(QMainWindow):
     def update_readings(self) -> None:
         """
         Updates the QLabels to show the readback values from the HVPS.
-        TODO: Need to make sure that the values from the `get_voltage` and
-        `get_current` methods are formatted correctly to display numerical values.
         """
 
         # Return if self.hvps is None
@@ -166,31 +166,14 @@ class MainWindow(QMainWindow):
             self.Vreadback_labels,
             self.Ireadback_labels,
         ):
-            v_readback = self.hvps.get_voltage(channel)
-            i_readback = self.hvps.get_current(channel)
+            v_readback = self.hvps.get_voltage(channel).strip(f'{channel}V ')
+            i_readback = self.hvps.get_current(channel).strip(f'{channel}C ')
             v_readback_label.setText(f'{v_readback} V')
             # Use uA for all current readings except for solenoid current.
             if channel != 'SL':
                 i_readback_label.setText(f'{i_readback} uA')
             else:
                 i_readback_label.setText(f'{i_readback} A')
-
-        ###### I think these blocks can be deleted if the above for-loop updates the gui.
-        # self.beam_Vreading_label.setText(f'{self.beam_Vreading} V')
-        # self.ext_Vreading_label.setText(f'{self.ext_Vreading} V')
-        # self.L1_Vreading_label.setText(f'{self.L1_Vreading} V')
-        # self.L2_Vreading_label.setText(f'{self.L2_Vreading} V')
-        # self.L3_Vreading_label.setText(f'{self.L3_Vreading} V')
-        # self.L4_Vreading_label.setText(f'{self.L4_Vreading} V')
-        # self.sol_Vreading_label.setText(f'{self.sol_Vreading} V')
-
-        # self.beam_Ireading_label.setText(f'{self.beam_Ireading} uA')
-        # self.ext_Ireading_label.setText(f'{self.ext_Ireading} uA')
-        # self.L1_Ireading_label.setText(f'{self.L1_Ireading} uA')
-        # self.L2_Ireading_label.setText(f'{self.L2_Ireading} uA')
-        # self.L3_Ireading_label.setText(f'{self.L3_Ireading} uA')
-        # self.L4_Ireading_label.setText(f'{self.L4_Ireading} uA')
-        # self.sol_Ireading_label.setText(f'{self.sol_Ireading} A')
 
     def create_gui(self) -> None:
         window_width = 330
@@ -334,7 +317,8 @@ class MainWindow(QMainWindow):
             self.sol_Ireadback_label,
         )
 
-        # Create a dictionary of only the voltage entries
+        # Create a dictionary of only the voltage QLineEdits and their inputs
+        # Keys are the QLineEdits. Values are the entries.
         self.voltage_entries: dict[QLineEdit, str] = {
             self.beam_entry: self.beam_setting,
             self.ext_entry: self.ext_setting,
@@ -344,7 +328,8 @@ class MainWindow(QMainWindow):
             self.L4_entry: self.L4_setting,
         }
 
-        # Clear the focus of the entry box when the enter button is pressed.
+        # Connect the returnPressed Signal to the handle_return_pressed slot
+        # to clear the focus and set the target voltage or current value.
         for entry in self.entries:
             entry.returnPressed.connect(self.handle_return_pressed)
 
@@ -421,7 +406,9 @@ class MainWindow(QMainWindow):
 
         main_layout = QGridLayout()
         main_layout.addLayout(btn_layout, 0, 0, 1, 4)
-        main_layout.addWidget(QLabel(), 1, 0, 1, 4)  # spacer
+        main_layout.addWidget(
+            QLabel(), 1, 0, 1, 4
+        )  # spacer between the buttons and entry boxes/readback
         main_layout.addWidget(
             self.setting_title_label, 2, 1, alignment=Qt.AlignmentFlag.AlignCenter
         )
@@ -490,6 +477,24 @@ class MainWindow(QMainWindow):
         the Signals from the HVPSTestWindow to the proper Slots (methods).
         Shows the test window as a modal window to block interaction with the main window.
         """
+
+        if self.hvps is None:
+            return
+
+        # Set the target voltages and target solenoid current to zero
+        # and update the QLineEdits to reflect this before the test starts
+        for channel, setting, entry in zip(
+            self.hvps.all_channels, self.settings, self.entries
+        ):
+            setting = '0'
+            if channel != 'SL':
+                self.hvps.set_voltage(channel, setting)
+            else:
+                self.hvps.set_solenoid_current(setting)
+            entry.setText(setting)
+
+        # Check that there isn't already a test window open and that there is a socket connection
+        # If all ok, then open up the test window.
         if self.hvps_test_window is None and self.sock is not None:
             self.hvps_test_window = HVPSTestWindow(sock=self.sock, parent=self)
             self.hvps_test_window.test_complete.connect(self.handle_hvps_test_complete)
@@ -506,8 +511,12 @@ class MainWindow(QMainWindow):
     ) -> None:
         """
         Handles what happens when the HVPS test has completes successfully.
-        Shows a message box that lets the user know the test is finished.
+        Gets the emitted Signal and sets the variables for occupied_channels,
+        test_readbacks, and test_measurements.
+        Shows a message box that lets the user know the test is finished
+        and asks if they want to print a test report.
         """
+        print('handle_hvps_test_complete was called')
         self.occupied_channels = occupied_channels
         self.test_readbacks = readbacks
         self.test_measurements = measurements
@@ -559,11 +568,11 @@ class MainWindow(QMainWindow):
         else:
             self.hv_enable_btn.setText('ON')
             self.hvps.enable_high_voltage()
-            for (line_edit, setting), channel in zip(
-                self.voltage_entries.items(), self.hvps.occupied_channels
-            ):
-                setting = line_edit.text()
-                self.hvps.set_voltage(channel, setting)
+            # for (line_edit, setting), channel in zip(
+            #     self.voltage_entries.items(), self.hvps.occupied_channels
+            # ):
+            #     setting = line_edit.text()
+            #     self.hvps.set_voltage(channel, setting)
 
     def handle_sol_enable_btn(self) -> None:
         """
