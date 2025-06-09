@@ -193,7 +193,15 @@ class HVPSv3:
         return response
 
     def get_state(self) -> str:
-        """Gets the enable state of the HV and solenoid"""
+        """
+        Gets the enable state of the HV and solenoid
+
+        Possible states:
+            HV off / sol off returns 'STATE0000'
+            HV off / sol on returns 'STATE0010'
+            HV on / sol off returns 'STATE0001'
+            HV on / sol on returns 'STATE0011'
+        """
         command = 'RDSTA'
         response = self.send_query(command)
         # print(f'get_state response: "{response}"')
