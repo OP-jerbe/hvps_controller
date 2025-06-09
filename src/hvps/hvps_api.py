@@ -75,8 +75,8 @@ class HVPSv3:
         current = f'{num:.2f}'
         command = f'STSLT00{current}'
         response = self.send_query(command)
-        return response
         # print(f'set_solenoid_current response: "{response}"')
+        return response
 
     def set_voltage(self, channel: str, voltage: str) -> str:
         """Sets the voltage of the specified channel in the HVPS"""
