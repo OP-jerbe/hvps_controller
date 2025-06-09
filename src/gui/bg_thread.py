@@ -2,9 +2,9 @@ from PySide6.QtCore import QObject, QTimer, Signal
 
 
 class Worker(QObject):
-    updated = Signal(str)
+    updated = Signal()
     stop_requested = Signal()
-    stopped = Signal()  # NEW: emitted when timer is fully stopped
+    stopped = Signal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -21,8 +21,7 @@ class Worker(QObject):
     def stop(self) -> None:
         if self.timer and self.timer.isActive():
             self.timer.stop()
-        self.stopped.emit()  # Notify that cleanup is done
+        self.stopped.emit()
 
     def on_timeout(self) -> None:
-        self.counter += 1
-        self.updated.emit(f'Seconds passed: {self.counter}')
+        self.updated.emit()
