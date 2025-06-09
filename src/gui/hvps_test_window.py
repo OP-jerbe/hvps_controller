@@ -149,20 +149,6 @@ class HVPSTestWindow(QDialog):
 
         self.setLayout(self.main_layout)
 
-    def handle_channel_select(self) -> None:
-        """
-        Creates a list of the occupied channels from the user's selection
-        in the create_channel_selection_gui window. If the checkbox was
-        selected, the channel identifier (i.e. "BM", "EX", "L1", "SL", etc.)
-        are appended to self.occupied_channels.
-        Then self.test_plan() is called.
-        """
-        self.occupied_channels: list[str] = []
-        for chbx, channel in self.checkbox_channels.items():
-            if chbx.isChecked():
-                self.occupied_channels.append(channel)
-        self.test_plan()
-
     def test_plan(self) -> None:
         """
         Creates a list of gui creation methods to call depending on which
@@ -201,26 +187,6 @@ class HVPSTestWindow(QDialog):
         else:
             self.test_complete.emit()
             self.close()
-
-    def handle_next_btn(self) -> None:
-        """
-        If the HV is on, turn it off and set the current channel HV target to zero.
-        If the solenoid is on, turn it off and set the solenoid current target to zero.
-        Adds the channel measurements to the measurements dictionary
-        Adds the channel readbacks to the readbacks dictionary
-        Calls load_current_stage method.
-        """
-        if self.get_hv_enable_state() is True:  # disable btn not pressed
-            self.hvps.disable_high_voltage()
-            self.hvps.set_voltage(self.channel, '0')
-        if self.get_sol_enable_state() is True:  # disable btn not pressed
-            self.hvps.disable_solenoid_current()
-            self.hvps.set_solenoid_current('0')
-
-        self.measurements[self.channel] = self.channel_measurements
-        self.readbacks[self.channel] = self.channel_readbacks
-        self.current_stage_index += 1
-        self.load_current_stage()
 
     def create_beam_test_gui(self) -> None:
         """
@@ -1152,14 +1118,40 @@ class HVPSTestWindow(QDialog):
         self.main_layout.addWidget(photo, 0, 3, 7, 1)
         self.setLayout(self.main_layout)
 
-    def handle_disable_hv_btn(self) -> None:
+    def handle_channel_select(self) -> None:
         """
-        If the HV is enabled, disables the HV.
-        Sets the current channel HV target to zero
+        Creates a list of the occupied channels from the user's selection
+        in the create_channel_selection_gui window. If the checkbox was
+        selected, the channel identifier (i.e. "BM", "EX", "L1", "SL", etc.)
+        are appended to self.occupied_channels.
+        Then self.test_plan() is called.
         """
-        if self.get_hv_enable_state() is True:
+        self.occupied_channels: list[str] = []
+        for chbx, channel in self.checkbox_channels.items():
+            if chbx.isChecked():
+                self.occupied_channels.append(channel)
+        self.test_plan()
+
+    def handle_next_btn(self) -> None:
+        """
+        If the HV is on, turn it off and set the current channel HV target to zero.
+        If the solenoid is on, turn it off and set the solenoid current target to zero.
+        Adds the channel measurements to the measurements dictionary
+        Adds the channel readbacks to the readbacks dictionary
+        Calls load_current_stage method.
+        """
+
+        if self.get_hv_enable_state() is True:  # disable btn not pressed
             self.hvps.disable_high_voltage()
-        self.hvps.set_voltage(self.channel, '0')
+            self.hvps.set_voltage(self.channel, '0')
+        if self.get_sol_enable_state() is True:  # disable btn not pressed
+            self.hvps.disable_solenoid_current()
+            self.hvps.set_solenoid_current('0')
+
+        self.measurements[self.channel] = self.channel_measurements
+        self.readbacks[self.channel] = self.channel_readbacks
+        self.current_stage_index += 1
+        self.load_current_stage()
 
     def handle_test_hv_btn(self, channel: str, voltage: str) -> None:
         """
@@ -1195,9 +1187,19 @@ class HVPSTestWindow(QDialog):
         Appends the readback value to the channel_readbacks list
         Appends the value in the QLineEdit to the channel_measurements list.
         """
+
         readback = self.hvps.get_current('SL')
         self.channel_readbacks.append(readback)
         self.channel_measurements.append(measurement)
+
+    def handle_disable_hv_btn(self) -> None:
+        """
+        If the HV is enabled, disables the HV.
+        Sets the current channel HV target to zero
+        """
+        if self.get_hv_enable_state() is True:
+            self.hvps.disable_high_voltage()
+        self.hvps.set_voltage(self.channel, '0')
 
     def handle_disable_sol_btn(self) -> None:
         """
