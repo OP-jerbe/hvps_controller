@@ -31,15 +31,22 @@ class HVPSTestWindow(QDialog):
     def __init__(self, sock: SocketType, parent=None) -> None:
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.Dialog)
+
+        # Get the socket and create the HVPS object
         self.sock = sock
         self.hvps: HVPSv3 = HVPSv3(sock)
+
+        # Define the voltages and currents used for testing the HVPS
         self.test_voltages: tuple[str, ...] = ('100', '500', '1000')  # volts
         self.test_currents: tuple[str, ...] = ('0.3', '1.2', '2.5')  # amps
+
+        # Make empty lists and dicts to hold measurement and readback data
         self.channel_readbacks: list[str] = []
         self.channel_measurements: list[str] = []
-        self.measurements: dict[str, list[str]] = {}
         self.readbacks: dict[str, list[str]] = {}
-        self.installEventFilter(self)
+        self.measurements: dict[str, list[str]] = {}
+
+        # Set the window Icon and style the window
         self.root_dir: Path = get_root_dir()
         icon_path: str = str(self.root_dir / 'assets' / 'hvps_icon.ico')
         self.setWindowIcon(QIcon(icon_path))
@@ -47,36 +54,58 @@ class HVPSTestWindow(QDialog):
         self.setStyleSheet(
             self.styleSheet() + """QLineEdit, QTextEdit {color: lightgreen;}"""
         )
+
+        # Create the regex expressions to validate the entries in the QLineEdits
         lv_regex = QRegularExpression(r'^-?\d{0,3}+\.\d{1,1}$')
         hv_regex = QRegularExpression(r'^-?\d{0,4}+\.\d{1,1}$')
         sol_regex = QRegularExpression(r'^\d{0,1}+\.\d{1,2}$')
         self.lv_validator = QRegularExpressionValidator(lv_regex)
         self.hv_validator = QRegularExpressionValidator(hv_regex)
         self.sol_validator = QRegularExpressionValidator(sol_regex)
+
+        # Create the main layout
         self.main_layout = QGridLayout()
+
+        # Call the first gui window where the user selects the occupied channels.
         self.create_channel_selection_gui()
 
     def get_hv_enable_state(self) -> bool:
+        """
+        Gets the state of the HV enable.
+        Returns False if the HV enable is off.
+        Returns True if the HV enable is on.
+        """
         state: str = self.hvps.get_state()
         if state == 'STATE0000' or state == 'STATE0010':
             return False
         return True
 
     def get_sol_enable_state(self) -> bool:
+        """
+        Gets the state of the solenoid enable.
+        Returns False if the solenoid enable is off.
+        Returns True if the solenoid enable is on.
+        """
         state: str = self.hvps.get_state()
         if state == 'STATE0000' or state == 'STATE0001':
             return False
         return True
 
     def clear_layout(self) -> None:
+        """
+        Deletes all of the widgets in self.main_layout.
+        """
         while self.main_layout.count():
             item = self.main_layout.takeAt(0)
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
-        print('Widgets cleared')
 
     def create_channel_selection_gui(self) -> None:
+        """
+        Creates the checkbox widgets for the user to select which channels
+        are occupied in the HVPS.
+        """
         window_width = 280
         window_height = 180
         self.setFixedSize(window_width, window_height)
@@ -121,6 +150,13 @@ class HVPSTestWindow(QDialog):
         self.setLayout(self.main_layout)
 
     def handle_channel_select(self) -> None:
+        """
+        Creates a list of the occupied channels from the user's selection
+        in the create_channel_selection_gui window. If the checkbox was
+        selected, the channel identifier (i.e. "BM", "EX", "L1", "SL", etc.)
+        are appended to self.occupied_channels.
+        Then self.test_plan() is called.
+        """
         self.occupied_channels: list[str] = []
         for chbx, channel in self.checkbox_channels.items():
             if chbx.isChecked():
@@ -128,6 +164,12 @@ class HVPSTestWindow(QDialog):
         self.test_plan()
 
     def test_plan(self) -> None:
+        """
+        Creates a list of gui creation methods to call depending on which
+        channels are in self.occupied_channels.
+        Initializes the current_stage_index to zero.
+        Calls the load_current_stage method.
+        """
         self.test_stages: list[Callable] = []
         if 'BM' in self.occupied_channels:
             self.test_stages.append(self.create_beam_test_gui)
@@ -147,6 +189,12 @@ class HVPSTestWindow(QDialog):
         self.load_current_stage()
 
     def load_current_stage(self) -> None:
+        """
+        If the current_stage_index is less than the length of the test_stages list,
+        clears the layout then calls the gui creator method at the current_stage_index.
+        If current_stage_index is greater than the length of the test_stages list,
+        emits the test_complete signal and closes the window.
+        """
         if self.current_stage_index < len(self.test_stages):
             self.clear_layout()
             self.test_stages[self.current_stage_index]()
@@ -155,6 +203,13 @@ class HVPSTestWindow(QDialog):
             self.close()
 
     def handle_next_btn(self) -> None:
+        """
+        If the HV is on, turn it off and set the current channel HV target to zero.
+        If the solenoid is on, turn it off and set the solenoid current target to zero.
+        Adds the channel measurements to the measurements dictionary
+        Adds the channel readbacks to the readbacks dictionary
+        Calls load_current_stage method.
+        """
         if self.get_hv_enable_state() is True:  # disable btn not pressed
             self.hvps.disable_high_voltage()
             self.hvps.set_voltage(self.channel, '0')
@@ -168,6 +223,9 @@ class HVPSTestWindow(QDialog):
         self.load_current_stage()
 
     def create_beam_test_gui(self) -> None:
+        """
+        Creates the gui to test the beam channel
+        """
         window_width = 1150
         window_height = 600
         self.setFixedSize(window_width, window_height)
@@ -304,6 +362,9 @@ class HVPSTestWindow(QDialog):
         self.setLayout(self.main_layout)
 
     def create_ext_test_gui(self) -> None:
+        """
+        Creates the gui to test the Extractor channel.
+        """
         window_width = 1150
         window_height = 600
         self.setFixedSize(window_width, window_height)
@@ -440,6 +501,9 @@ class HVPSTestWindow(QDialog):
         self.setLayout(self.main_layout)
 
     def create_L1_test_gui(self) -> None:
+        """
+        Creates the gui to test the Lens 1 channel
+        """
         window_width = 1150
         window_height = 600
         self.setFixedSize(window_width, window_height)
@@ -576,6 +640,9 @@ class HVPSTestWindow(QDialog):
         self.setLayout(self.main_layout)
 
     def create_L2_test_gui(self) -> None:
+        """
+        Creates the gui to test the Lens 2 channel
+        """
         window_width = 1150
         window_height = 600
         self.setFixedSize(window_width, window_height)
@@ -712,6 +779,9 @@ class HVPSTestWindow(QDialog):
         self.setLayout(self.main_layout)
 
     def create_L3_test_gui(self) -> None:
+        """
+        Creates the gui to test the Lens 3 channel
+        """
         window_width = 1150
         window_height = 600
         self.setFixedSize(window_width, window_height)
@@ -848,6 +918,9 @@ class HVPSTestWindow(QDialog):
         self.setLayout(self.main_layout)
 
     def create_L4_test_gui(self) -> None:
+        """
+        Creates the gui to test the Lens 4 channel
+        """
         window_width = 1150
         window_height = 600
         self.setFixedSize(window_width, window_height)
@@ -984,6 +1057,9 @@ class HVPSTestWindow(QDialog):
         self.setLayout(self.main_layout)
 
     def create_sol_test_gui(self) -> None:
+        """
+        Creates the gui to test the solenoid channel
+        """
         window_width = 1150
         window_height = 600
         self.setFixedSize(window_width, window_height)
@@ -1077,35 +1153,68 @@ class HVPSTestWindow(QDialog):
         self.setLayout(self.main_layout)
 
     def handle_disable_hv_btn(self) -> None:
+        """
+        If the HV is enabled, disables the HV.
+        Sets the current channel HV target to zero
+        """
         if self.get_hv_enable_state() is True:
             self.hvps.disable_high_voltage()
         self.hvps.set_voltage(self.channel, '0')
 
     def handle_test_hv_btn(self, channel: str, voltage: str) -> None:
+        """
+        Checks the HV enable state. If it is not on, enables the HV.
+        Sets the current channel HV target to the specified voltage.
+        """
         if self.get_hv_enable_state() is False:
             self.hvps.enable_high_voltage()
         self.hvps.set_voltage(channel, voltage)
 
     def handle_test_sol_btn(self, current: str) -> None:
+        """
+        Checks if the solenoid enable state. If it is not on, enables the solenoid.
+        Sets the solenoid current target to the specified current.
+        """
         if self.get_sol_enable_state() is False:
             self.hvps.enable_solenoid_current()
         self.hvps.set_solenoid_current(current)
 
     def handle_voltage_returnPressed(self, channel: str, measurement: str) -> None:
+        """
+        Gets the readback value of the voltage for the current channel.
+        Appends the readback value to the channel_readbacks list.
+        Appends the value in the QLineEdit to the channel_measurements list.
+        """
         readback = self.hvps.get_voltage(channel)
         self.channel_readbacks.append(readback)
         self.channel_measurements.append(measurement)
 
     def handle_current_returnPressed(self, measurement: str) -> None:
+        """
+        Gets the readback value of the solenoid current.
+        Appends the readback value to the channel_readbacks list
+        Appends the value in the QLineEdit to the channel_measurements list.
+        """
         readback = self.hvps.get_current('SL')
         self.channel_readbacks.append(readback)
         self.channel_measurements.append(measurement)
 
     def handle_disable_sol_btn(self) -> None:
+        """
+        If the solenoid enable state is ON. Turns off the solenoid current.
+        """
         if self.get_sol_enable_state() is True:
             self.hvps.disable_solenoid_current()
 
     def closeEvent(self, event) -> None:
+        """
+        Handles what happens when the window closes.
+        Checks if the HV is still enabled. If it is, disables HV and sets
+        the target of the current channel to zero.
+        Checks if the solenoid is still enabled. If it is, disables the
+        solenoid current and sets the solenoid current target to zero.
+        Emits the window_closed Signal.
+        """
         if self.get_hv_enable_state is True:
             self.hvps.disable_high_voltage()
             self.hvps.set_voltage(self.channel, '0')
