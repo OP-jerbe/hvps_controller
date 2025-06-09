@@ -46,6 +46,25 @@ from .open_socket_window import OpenSocketWindow
 
 
 class MainWindow(QMainWindow):
+    """
+    This MainWindow class serves as the control panel for the HVPSv3. It allows the
+    user to enable and disable the high voltage and constant current power supplies,
+    enter voltage targets for up to six high voltage channels, and enter a current
+    target for the one constant current supply used by the solenoid.
+
+    The File menu has three options: `Connect`, `Run Test`, and  `Exit`. Selecting
+    `Connect` will open a dialog window which lets the user attempt to make a socket
+    connection to the HVPSv3. Selecting `Run Test` will open up a dialog window that
+    will run through testing each of the installed channels of the HVPSv3. Selecting
+    `Exit` will close the application.
+
+    The Help menu option has one option: `Open User Guide`. Selecting this option will
+    open up an html file in the user's default web browser.
+
+    A background thread runs that gets the voltage and current readbacks from all of
+    the channels, once every second.
+    """
+
     def __init__(self, version: str, sock: Optional[SocketType] = None) -> None:
         super().__init__()
         self.installEventFilter(self)
@@ -72,39 +91,39 @@ class MainWindow(QMainWindow):
         self.hvps_test_window: Optional[HVPSTestWindow] = None
 
         # Create the attributes that will hold the voltage readback values
-        self.beam_Vreading: str = '0 V'
-        self.ext_Vreading: str = '0 V'
-        self.L1_Vreading: str = '0 V'
-        self.L2_Vreading: str = '0 V'
-        self.L3_Vreading: str = '0 V'
-        self.L4_Vreading: str = '0 V'
-        self.sol_Vreading: str = '0 V'
-        self.voltage_readings: tuple[str, ...] = (
-            self.beam_Vreading,
-            self.ext_Vreading,
-            self.L1_Vreading,
-            self.L2_Vreading,
-            self.L3_Vreading,
-            self.L4_Vreading,
-            self.sol_Vreading,
+        self.beam_Vreadback: str = '0 V'
+        self.ext_Vreadback: str = '0 V'
+        self.L1_Vreadback: str = '0 V'
+        self.L2_Vreadback: str = '0 V'
+        self.L3_Vreadback: str = '0 V'
+        self.L4_Vreadback: str = '0 V'
+        self.sol_Vreadback: str = '0 V'
+        self.voltage_readbacks: tuple[str, ...] = (
+            self.beam_Vreadback,
+            self.ext_Vreadback,
+            self.L1_Vreadback,
+            self.L2_Vreadback,
+            self.L3_Vreadback,
+            self.L4_Vreadback,
+            self.sol_Vreadback,
         )
 
         # Create the attributes that will hold the current readback values
-        self.beam_Ireading: str = '0 uA'
-        self.ext_Ireading: str = '0 uA'
-        self.L1_Ireading: str = '0 uA'
-        self.L2_Ireading: str = '0 uA'
-        self.L3_Ireading: str = '0 uA'
-        self.L4_Ireading: str = '0 uA'
-        self.sol_Ireading: str = '0 uA'
-        self.current_readings: tuple[str, ...] = (
-            self.beam_Ireading,
-            self.ext_Ireading,
-            self.L1_Ireading,
-            self.L2_Ireading,
-            self.L3_Ireading,
-            self.L4_Ireading,
-            self.sol_Ireading,
+        self.beam_Ireadback: str = '0 uA'
+        self.ext_Ireadback: str = '0 uA'
+        self.L1_Ireadback: str = '0 uA'
+        self.L2_Ireadback: str = '0 uA'
+        self.L3_Ireadback: str = '0 uA'
+        self.L4_Ireadback: str = '0 uA'
+        self.sol_Ireadback: str = '0 uA'
+        self.current_readbacks: tuple[str, ...] = (
+            self.beam_Ireadback,
+            self.ext_Ireadback,
+            self.L1_Ireadback,
+            self.L2_Ireadback,
+            self.L3_Ireadback,
+            self.L4_Ireadback,
+            self.sol_Ireadback,
         )
 
         # Create the attributes that will hold the channel settings
@@ -134,39 +153,44 @@ class MainWindow(QMainWindow):
         `get_current` methods are formatted correctly to display numerical values.
         """
 
+        # Return if self.hvps is None
         if not self.hvps:
             return
 
-        for v_reading, i_reading, v_label, i_label, channel in zip(
-            self.voltage_readings,
-            self.current_readings,
-            self.Vreading_labels,
-            self.Ireading_labels,
+        # Get the voltage and current readbacks from the HVPSv3 and set the QLabel
+        # text in the gui.
+        for channel, v_readback, i_readback, v_readback_label, i_readback_label in zip(
             self.hvps.all_channels,
+            self.voltage_readbacks,
+            self.current_readbacks,
+            self.Vreadback_labels,
+            self.Ireadback_labels,
         ):
-            v_reading = self.hvps.get_voltage(channel)
-            i_reading = self.hvps.get_current(channel)
-            v_label.setText(f'{v_reading} V')
+            v_readback = self.hvps.get_voltage(channel)
+            i_readback = self.hvps.get_current(channel)
+            v_readback_label.setText(f'{v_readback} V')
+            # Use uA for all current readings except for solenoid current.
             if channel != 'SL':
-                i_label.setText(f'{i_reading} uA')
+                i_readback_label.setText(f'{i_readback} uA')
             else:
-                i_label.setText(f'{i_reading} A')
+                i_readback_label.setText(f'{i_readback} A')
 
-        self.beam_Vreading_label.setText(f'{self.beam_Vreading} V')
-        self.ext_Vreading_label.setText(f'{self.ext_Vreading} V')
-        self.L1_Vreading_label.setText(f'{self.L1_Vreading} V')
-        self.L2_Vreading_label.setText(f'{self.L2_Vreading} V')
-        self.L3_Vreading_label.setText(f'{self.L3_Vreading} V')
-        self.L4_Vreading_label.setText(f'{self.L4_Vreading} V')
-        self.sol_Vreading_label.setText(f'{self.sol_Vreading} V')
+        ###### I think these blocks can be deleted if the above for-loop updates the gui.
+        # self.beam_Vreading_label.setText(f'{self.beam_Vreading} V')
+        # self.ext_Vreading_label.setText(f'{self.ext_Vreading} V')
+        # self.L1_Vreading_label.setText(f'{self.L1_Vreading} V')
+        # self.L2_Vreading_label.setText(f'{self.L2_Vreading} V')
+        # self.L3_Vreading_label.setText(f'{self.L3_Vreading} V')
+        # self.L4_Vreading_label.setText(f'{self.L4_Vreading} V')
+        # self.sol_Vreading_label.setText(f'{self.sol_Vreading} V')
 
-        self.beam_Ireading_label.setText(f'{self.beam_Ireading} uA')
-        self.ext_Ireading_label.setText(f'{self.ext_Ireading} uA')
-        self.L1_Ireading_label.setText(f'{self.L1_Ireading} uA')
-        self.L2_Ireading_label.setText(f'{self.L2_Ireading} uA')
-        self.L3_Ireading_label.setText(f'{self.L3_Ireading} uA')
-        self.L4_Ireading_label.setText(f'{self.L4_Ireading} uA')
-        self.sol_Ireading_label.setText(f'{self.sol_Ireading} A')
+        # self.beam_Ireading_label.setText(f'{self.beam_Ireading} uA')
+        # self.ext_Ireading_label.setText(f'{self.ext_Ireading} uA')
+        # self.L1_Ireading_label.setText(f'{self.L1_Ireading} uA')
+        # self.L2_Ireading_label.setText(f'{self.L2_Ireading} uA')
+        # self.L3_Ireading_label.setText(f'{self.L3_Ireading} uA')
+        # self.L4_Ireading_label.setText(f'{self.L4_Ireading} uA')
+        # self.sol_Ireading_label.setText(f'{self.sol_Ireading} A')
 
     def create_gui(self) -> None:
         window_width = 330
@@ -182,6 +206,7 @@ class MainWindow(QMainWindow):
             self.styleSheet() + """QLineEdit, QTextEdit {color: lightgreen;}"""
         )
 
+        # Create the validators used for voltage and current entries
         voltage_regex = QRegularExpression(r'^-?\d{1,5}$')
         voltage_validator = QRegularExpressionValidator(voltage_regex)
         current_regex = QRegularExpression(r'^(\d+)?(\.\d{1,2})?$')
@@ -189,40 +214,51 @@ class MainWindow(QMainWindow):
 
         # Create the QAction objects for the menus
         self.open_socket_window_action = QAction(text='Connect', parent=self)
-        self.open_socket_window_action.triggered.connect(self.handle_open_socket_window)
         self.run_test_action = QAction(text='Run Test', parent=self)
-        self.run_test_action.triggered.connect(self.handle_run_test)
-        if not self.sock:
-            self.run_test_action.setEnabled(False)
         self.exit_action = QAction(text='Exit', parent=self)
-        self.exit_action.triggered.connect(self.handle_exit)
         self.open_user_guide_action = QAction(text='User Guide', parent=self)
+
+        # Connect the QActions to slots when triggered
+        self.open_socket_window_action.triggered.connect(self.handle_open_socket_window)
+        self.run_test_action.triggered.connect(self.handle_run_test)
+        self.exit_action.triggered.connect(self.handle_exit)
         self.open_user_guide_action.triggered.connect(self.open_user_guide)
 
         # Create the menu bar and menu bar selections
         self.menu_bar = self.menuBar()
         self.file_menu = self.menu_bar.addMenu('File')
+        self.help_menu = self.menu_bar.addMenu('Help')
+
+        # Add the QActions to the menu bar options
         self.file_menu.addAction(self.open_socket_window_action)
         self.file_menu.addAction(self.run_test_action)
         self.file_menu.addAction(self.exit_action)
-        self.help_menu = self.menu_bar.addMenu('Help')
         self.help_menu.addAction(self.open_user_guide_action)
 
         ##### Create the widgets #####
         # Create the buttons
         self.hv_enable_btn = QPushButton('OFF')
-        self.hv_enable_btn.setCheckable(True)
-        self.hv_enable_btn.setFixedWidth(button_width)
-        self.hv_enable_btn.clicked.connect(self.handle_hv_enable_btn)
         self.sol_enable_btn = QPushButton('OFF')
+
+        # Set the buttons to be checkable so they have two states
+        self.hv_enable_btn.setCheckable(True)
         self.sol_enable_btn.setCheckable(True)
-        self.sol_enable_btn.setFixedWidth(button_width)
+
+        # Connect the buttons to slots when clicked
+        self.hv_enable_btn.clicked.connect(self.handle_hv_enable_btn)
         self.sol_enable_btn.clicked.connect(self.handle_sol_enable_btn)
+
+        # Set the widths of the buttons
+        self.hv_enable_btn.setFixedWidth(button_width)
+        self.sol_enable_btn.setFixedWidth(button_width)
+
+        # If a socket connection was not made upon opening, disable the buttons
         if not self.sock:
             self.hv_enable_btn.setEnabled(False)
             self.sol_enable_btn.setEnabled(False)
+            self.run_test_action.setEnabled(False)
 
-        # Create the labels and entry boxes
+        # Create the Qlabels
         self.hv_btn_label = QLabel('High Voltage')
         self.sol_btn_label = QLabel('Solenoid Current')
         self.beam_label = QLabel('Beam')
@@ -232,61 +268,73 @@ class MainWindow(QMainWindow):
         self.L3_label = QLabel('Lens 3')
         self.L4_label = QLabel('Lens 4')
         self.solenoid_label = QLabel('Solenoid')
-
         self.setting_title_label = QLabel('Setting')
+        self.V_readback_title_label = QLabel('Voltage')
+        self.I_readback_title_label = QLabel('Current')
+
+        # Create the QLineEdits for the target entries
         self.beam_entry = QLineEdit(self.beam_setting)
-        self.beam_entry.setValidator(voltage_validator)
         self.ext_entry = QLineEdit(self.ext_setting)
-        self.ext_entry.setValidator(voltage_validator)
         self.L1_entry = QLineEdit(self.L1_setting)
-        self.L1_entry.setValidator(voltage_validator)
         self.L2_entry = QLineEdit(self.L2_setting)
-        self.L2_entry.setValidator(voltage_validator)
         self.L3_entry = QLineEdit(self.L3_setting)
-        self.L3_entry.setValidator(voltage_validator)
         self.L4_entry = QLineEdit(self.L4_setting)
-        self.L4_entry.setValidator(voltage_validator)
         self.sol_entry = QLineEdit(self.sol_setting)
+        self.entries: tuple[QLineEdit, ...] = (
+            self.beam_entry,
+            self.ext_entry,
+            self.L1_entry,
+            self.L2_entry,
+            self.L3_entry,
+            self.L4_entry,
+            self.sol_entry,
+        )
+
+        # Set the validators for the QLineEdits so only valid entries are accepted
+        self.beam_entry.setValidator(voltage_validator)
+        self.ext_entry.setValidator(voltage_validator)
+        self.L1_entry.setValidator(voltage_validator)
+        self.L2_entry.setValidator(voltage_validator)
+        self.L3_entry.setValidator(voltage_validator)
+        self.L4_entry.setValidator(voltage_validator)
         self.sol_entry.setValidator(current_validator)
 
-        # Create the QLabels for holding the read back data
-        self.V_readback_title_label = QLabel('Voltage')
-        self.beam_Vreading_label = QLabel(self.beam_Vreading)
-        self.ext_Vreading_label = QLabel(self.ext_Vreading)
-        self.L1_Vreading_label = QLabel(self.L1_Vreading)
-        self.L2_Vreading_label = QLabel(self.L2_Vreading)
-        self.L3_Vreading_label = QLabel(self.L3_Vreading)
-        self.L4_Vreading_label = QLabel(self.L4_Vreading)
-        self.sol_Vreading_label = QLabel(self.sol_Vreading)
-        self.Vreading_labels: tuple[QLabel, ...] = (
-            self.beam_Vreading_label,
-            self.ext_Vreading_label,
-            self.L1_Vreading_label,
-            self.L2_Vreading_label,
-            self.L3_Vreading_label,
-            self.L4_Vreading_label,
+        # Create the QLabels for holding the readback data
+        self.beam_Vreadback_label = QLabel(self.beam_Vreadback)
+        self.ext_Vreadback_label = QLabel(self.ext_Vreadback)
+        self.L1_Vreadback_label = QLabel(self.L1_Vreadback)
+        self.L2_Vreadback_label = QLabel(self.L2_Vreadback)
+        self.L3_Vreadback_label = QLabel(self.L3_Vreadback)
+        self.L4_Vreadback_label = QLabel(self.L4_Vreadback)
+        self.sol_Vreading_label = QLabel(self.sol_Vreadback)
+        self.Vreadback_labels: tuple[QLabel, ...] = (
+            self.beam_Vreadback_label,
+            self.ext_Vreadback_label,
+            self.L1_Vreadback_label,
+            self.L2_Vreadback_label,
+            self.L3_Vreadback_label,
+            self.L4_Vreadback_label,
             self.sol_Vreading_label,
         )
 
-        self.I_readback_title_label = QLabel('Current')
-        self.beam_Ireading_label = QLabel(self.beam_Ireading)
-        self.ext_Ireading_label = QLabel(self.ext_Ireading)
-        self.L1_Ireading_label = QLabel(self.L1_Ireading)
-        self.L2_Ireading_label = QLabel(self.L2_Ireading)
-        self.L3_Ireading_label = QLabel(self.L3_Ireading)
-        self.L4_Ireading_label = QLabel(self.L4_Ireading)
-        self.sol_Ireading_label = QLabel(self.sol_Ireading)
-        self.Ireading_labels: tuple[QLabel, ...] = (
-            self.beam_Ireading_label,
-            self.ext_Ireading_label,
-            self.L1_Ireading_label,
-            self.L2_Ireading_label,
-            self.L3_Ireading_label,
-            self.L4_Ireading_label,
-            self.sol_Ireading_label,
+        self.beam_Ireadback_label = QLabel(self.beam_Ireadback)
+        self.ext_Ireadback_label = QLabel(self.ext_Ireadback)
+        self.L1_Ireadback_label = QLabel(self.L1_Ireadback)
+        self.L2_Ireadback_label = QLabel(self.L2_Ireadback)
+        self.L3_Ireadback_label = QLabel(self.L3_Ireadback)
+        self.L4_Ireadback_label = QLabel(self.L4_Ireadback)
+        self.sol_Ireadback_label = QLabel(self.sol_Ireadback)
+        self.Ireadback_labels: tuple[QLabel, ...] = (
+            self.beam_Ireadback_label,
+            self.ext_Ireadback_label,
+            self.L1_Ireadback_label,
+            self.L2_Ireadback_label,
+            self.L3_Ireadback_label,
+            self.L4_Ireadback_label,
+            self.sol_Ireadback_label,
         )
 
-        # Group voltage entries
+        # Create a dictionary of only the voltage entries
         self.voltage_entries: dict[QLineEdit, str] = {
             self.beam_entry: self.beam_setting,
             self.ext_entry: self.ext_setting,
@@ -297,9 +345,8 @@ class MainWindow(QMainWindow):
         }
 
         # Clear the focus of the entry box when the enter button is pressed.
-        for entry, _ in self.voltage_entries.items():
+        for entry in self.entries:
             entry.returnPressed.connect(self.handle_return_pressed)
-        self.sol_entry.returnPressed.connect(self.handle_return_pressed)
 
         # Set the layout
         btn_layout = QGridLayout()
@@ -328,22 +375,22 @@ class MainWindow(QMainWindow):
 
         voltage_readback_layout = QVBoxLayout()
         voltage_readback_layout.addWidget(
-            self.beam_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.beam_Vreadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         voltage_readback_layout.addWidget(
-            self.ext_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.ext_Vreadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         voltage_readback_layout.addWidget(
-            self.L1_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.L1_Vreadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         voltage_readback_layout.addWidget(
-            self.L2_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.L2_Vreadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         voltage_readback_layout.addWidget(
-            self.L3_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.L3_Vreadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         voltage_readback_layout.addWidget(
-            self.L4_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.L4_Vreadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         voltage_readback_layout.addWidget(
             self.sol_Vreading_label, alignment=Qt.AlignmentFlag.AlignRight
@@ -351,25 +398,25 @@ class MainWindow(QMainWindow):
 
         current_readback_layout = QVBoxLayout()
         current_readback_layout.addWidget(
-            self.beam_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.beam_Ireadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         current_readback_layout.addWidget(
-            self.ext_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.ext_Ireadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         current_readback_layout.addWidget(
-            self.L1_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.L1_Ireadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         current_readback_layout.addWidget(
-            self.L2_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.L2_Ireadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         current_readback_layout.addWidget(
-            self.L3_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.L3_Ireadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         current_readback_layout.addWidget(
-            self.L4_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.L4_Ireadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         current_readback_layout.addWidget(
-            self.sol_Ireading_label, alignment=Qt.AlignmentFlag.AlignRight
+            self.sol_Ireadback_label, alignment=Qt.AlignmentFlag.AlignRight
         )
 
         main_layout = QGridLayout()
@@ -422,7 +469,6 @@ class MainWindow(QMainWindow):
         """
         self.sock = sock
         self.hvps = HVPSv3(self.sock)
-        # self.start_pinging_hvps() # shouldn't need to ping HVPS if bg_thread is working
         self.run_test_action.setEnabled(True)
         self.hv_enable_btn.setEnabled(True)
         self.sol_enable_btn.setEnabled(True)
@@ -452,21 +498,33 @@ class MainWindow(QMainWindow):
             )
             self.hvps_test_window.exec()
 
-    def handle_hvps_test_complete(self) -> None:
+    def handle_hvps_test_complete(
+        self,
+        occupied_channels: list[str],
+        readbacks: dict[str, list[str]],
+        measurements: dict[str, list[str]],
+    ) -> None:
         """
         Handles what happens when the HVPS test has completes successfully.
         Shows a message box that lets the user know the test is finished.
         """
+        self.occupied_channels = occupied_channels
+        self.test_readbacks = readbacks
+        self.test_measurements = measurements
+
         title = 'Test Complete'
-        text = 'HVPS test complete. Would you like to print a test report?'
+        text = 'HVPS test complete.\nWould you like to print a test report?'
         buttons = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         result = QMessageBox.question(self, title, text, buttons)
 
         if result == QMessageBox.StandardButton.Yes:
-            # TODO: emit the occupied_channels, readbacks, and measurements from the hvps_test_window.py file
-            # test_report_pdf = HVPSReport(serial_number='None', occupied_channels=self.occupied_channels, readbacks=self.readbacks, measurements=self.measurements)
-            # test_report_pdg.open()
-            ...
+            test_report_pdf = HVPSReport(
+                serial_number='None',
+                occupied_channels=self.occupied_channels,
+                readbacks=self.test_readbacks,
+                measurements=self.test_measurements,
+            )
+            test_report_pdf.open()
 
     def handle_test_hvps_window_closed(self) -> None:
         """
@@ -545,6 +603,7 @@ class MainWindow(QMainWindow):
 
     def handle_return_pressed(self) -> None:
         focused_widget = self.focusWidget()
+
         if not self.hvps:
             focused_widget.clearFocus()
             return
