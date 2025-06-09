@@ -25,7 +25,7 @@ from ..hvps.hvps_api import HVPSv3
 
 
 class HVPSTestWindow(QDialog):
-    test_complete = Signal()
+    test_complete = Signal(list[str], dict[str, list[str]], dict[str, list[str]])
     window_closed = Signal()
 
     def __init__(self, sock: SocketType, parent=None) -> None:
@@ -41,6 +41,7 @@ class HVPSTestWindow(QDialog):
         self.test_currents: tuple[str, ...] = ('0.3', '1.2', '2.5')  # amps
 
         # Make empty lists and dicts to hold measurement and readback data
+        self.occupied_channels: list[str] = []
         self.channel_readbacks: list[str] = []
         self.channel_measurements: list[str] = []
         self.readbacks: dict[str, list[str]] = {}
@@ -1126,7 +1127,7 @@ class HVPSTestWindow(QDialog):
         are appended to self.occupied_channels.
         Then self.test_plan() is called.
         """
-        self.occupied_channels: list[str] = []
+
         for chbx, channel in self.checkbox_channels.items():
             if chbx.isChecked():
                 self.occupied_channels.append(channel)
