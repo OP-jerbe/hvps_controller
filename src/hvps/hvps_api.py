@@ -44,7 +44,7 @@ class HVPSv3:
         """Sends a command to the HVPS and returns the response"""
         if not self.sock:
             raise ConnectionError('Socket is not connected')
-        print(f'Command: {query}')
+        # print(f'Command: {query}')
         if not query.endswith('\n'):
             query += '\n'
 
@@ -75,7 +75,8 @@ class HVPSv3:
         current = f'{num:.2f}'
         command = f'STSLT00{current}'
         response = self.send_query(command)
-        print(f'set_solenoid_current response: "{response}"')
+        return response
+        # print(f'set_solenoid_current response: "{response}"')
 
     def set_voltage(self, channel: str, voltage: str) -> str:
         """Sets the voltage of the specified channel in the HVPS"""
@@ -108,7 +109,7 @@ class HVPSv3:
         voltage = voltage.zfill(5)
         command = f'{command_prefix}{sign}{voltage}'
         response = self.send_query(command)
-        print(f'set_voltage response: "{response}"')
+        # print(f'set_voltage response: "{response}"')
         return response
 
     def get_voltage(self, channel: str) -> str:
@@ -119,7 +120,7 @@ class HVPSv3:
             )
         command = f'RD{channel}V'
         response = self.send_query(command)
-        print(f'get_voltage response: "{response}"')
+        # print(f'get_voltage response: "{response}"')
         return response
 
     def get_current(self, channel: str) -> str:
@@ -130,35 +131,35 @@ class HVPSv3:
             )
         command = f'RD{channel}C'
         response = self.send_query(command)
-        print(f'get_current response: "{response}"')
+        # print(f'get_current response: "{response}"')
         return response
 
     def enable_high_voltage(self) -> str:
         """Enables high voltage to be turned on"""
         command = 'STHV1'
         response = self.send_query(command)
-        print(f'enable_high_voltage response: "{response}"')
+        # print(f'enable_high_voltage response: "{response}"')
         return response
 
     def disable_high_voltage(self) -> str:
         """Turns off high voltage"""
         command = 'STHV0'
         response = self.send_query(command)
-        print(f'disable_high_voltage response: "{response}"')
+        # print(f'disable_high_voltage response: "{response}"')
         return response
 
     def enable_solenoid_current(self) -> str:
         """Enables the solenoid current to be turned on"""
         command = 'STSL1'
         response = self.send_query(command)
-        print(f'enable_solenoid response: "{response}"')
+        # print(f'enable_solenoid response: "{response}"')
         return response
 
     def disable_solenoid_current(self) -> str:
         """Turns off solenoid current."""
         command = 'STSL0'
         response = self.send_query(command)
-        print(f'disable_solenoid response: "{response}"')
+        # print(f'disable_solenoid response: "{response}"')
         return response
 
     def enable_wobble(self, channel: str, amplitude: str) -> str | None:
@@ -174,7 +175,7 @@ class HVPSv3:
 
         command = f'ST{channel}WE1A{amplitude}'
         response = self.send_query(command)
-        print(f'enable_wobble response: "{response}"')
+        # print(f'enable_wobble response: "{response}"')
         return response
 
     def disable_wobble(self, channel: str) -> str | None:
@@ -188,24 +189,12 @@ class HVPSv3:
 
         command = f'ST{channel}WEA0000'
         response = self.send_query(command)
-        print(f'disable_wobble response: "{response}"')
+        # print(f'disable_wobble response: "{response}"')
         return response
 
     def get_state(self) -> str:
         """Gets the enable state of the HV and solenoid"""
         command = 'RDSTA'
         response = self.send_query(command)
-        print(f'get_state response: "{response}"')
+        # print(f'get_state response: "{response}"')
         return response
-
-    def keep_alive(self) -> bool:
-        if self.sock:
-            try:
-                state = self.get_state()
-                if state:
-                    return True
-            except Exception as e:
-                print(f'keep_alive failed: {e}')
-                self.sock = None
-                return False
-        return False
