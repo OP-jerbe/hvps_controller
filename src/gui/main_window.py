@@ -39,6 +39,7 @@ from helpers.constants import IP, PING_INTERVAL, PORT
 from helpers.helpers import close_socket, get_root_dir
 
 from ..hvps.hvps_api import HVPSv3
+from ..pdf import HVPSReport
 from .bg_thread import Worker
 from .hvps_test_window import HVPSTestWindow
 from .open_socket_window import OpenSocketWindow
@@ -457,9 +458,15 @@ class MainWindow(QMainWindow):
         Shows a message box that lets the user know the test is finished.
         """
         title = 'Test Complete'
-        text = 'HVPS test complete'
-        buttons = QMessageBox.StandardButton.Ok
-        QMessageBox.information(self, title, text, buttons)
+        text = 'HVPS test complete. Would you like to print a test report?'
+        buttons = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        result = QMessageBox.question(self, title, text, buttons)
+
+        if result == QMessageBox.StandardButton.Yes:
+            # TODO: emit the occupied_channels, readbacks, and measurements from the hvps_test_window.py file
+            # test_report_pdf = HVPSReport(serial_number='None', occupied_channels=self.occupied_channels, readbacks=self.readbacks, measurements=self.measurements)
+            # test_report_pdg.open()
+            ...
 
     def handle_test_hvps_window_closed(self) -> None:
         """
