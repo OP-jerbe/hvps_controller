@@ -1,37 +1,24 @@
-from pathlib import Path
-from socket import SocketType
-from typing import Callable
-
-from PySide6.QtCore import QRegularExpression, Qt, Signal
-from PySide6.QtGui import (
-    QCloseEvent,
-    QIcon,
-    QPixmap,
-    QRegularExpressionValidator,
-)
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
-    QFrame,
     QGridLayout,
-    QLabel,
-    QLineEdit,
     QPushButton,
 )
-from qt_material import apply_stylesheet
-
-from helpers.helpers import get_root_dir
 
 
 class ChannelSelectionWindow(QDialog):
     """
-    Class to create a gui window that will allow the user to select which channels
+    Creates a gui window that will allow the user to select which channels
     are installed into the HVPSv3. Emits a Signal with list of occupied channels.
     """
 
     channels_selected = Signal(list)
+    window_closed = Signal()
 
-    def __init__(self) -> None:
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.Dialog)
         self.create_gui()
 
@@ -76,6 +63,7 @@ class ChannelSelectionWindow(QDialog):
         channel_select_btn = QPushButton('Ok')
         channel_select_btn.clicked.connect(self.handle_ok_btn_clicked)
 
+        # Create the layout
         main_layout = QGridLayout()
         main_layout.addWidget(beam_channel_chbx, 0, 0)
         main_layout.addWidget(ext_channel_chbx, 1, 0)
@@ -95,3 +83,8 @@ class ChannelSelectionWindow(QDialog):
             if chbx.isChecked():
                 self.occupied_channels.append(channel)
         self.channels_selected.emit(self.occupied_channels)
+        self.close()
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self.window_closed.emit()
+        super().closeEvent(event)
