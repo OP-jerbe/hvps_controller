@@ -111,7 +111,7 @@ class MainWindow(QMainWindow):
         self.L2_Ireadback: str = '0 uA'
         self.L3_Ireadback: str = '0 uA'
         self.L4_Ireadback: str = '0 uA'
-        self.sol_Ireadback: str = '0 uA'
+        self.sol_Ireadback: str = '0 A'
         self.current_readbacks: tuple[str, ...] = (
             self.beam_Ireadback,
             self.ext_Ireadback,
@@ -178,10 +178,12 @@ class MainWindow(QMainWindow):
             self.Vreadback_labels,
             self.Ireadback_labels,
         ):
+            # Get the voltage and current readbacks from the HVPS
             v_readback = self.hvps.get_voltage(channel).strip(f'{channel}V ')
             i_readback = self.hvps.get_current(channel).strip(f'{channel}C ')
+
+            # Set the readback labels
             v_readback_label.setText(f'{v_readback} V')
-            # Use uA for all current readings except for solenoid current.
             if channel != 'SL':
                 i_readback_label.setText(f'{i_readback} uA')
             else:
@@ -284,6 +286,8 @@ class MainWindow(QMainWindow):
             self.L4_entry,
             self.sol_entry,
         )
+        if not self.sock:
+            self.enable_entries(False)
 
         # Set the validators for the QLineEdits so only valid entries are accepted
         self.beam_entry.setValidator(voltage_validator)
@@ -471,6 +475,7 @@ class MainWindow(QMainWindow):
         self.run_test_action.setEnabled(True)
         self.hv_enable_btn.setEnabled(True)
         self.sol_enable_btn.setEnabled(True)
+        self.enable_entries(True)
 
     def handle_connection_window_closed(self, ip: str, port: str) -> None:
         """
@@ -515,7 +520,15 @@ class MainWindow(QMainWindow):
             self.hvps_test_window.window_closed.connect(
                 self.handle_test_hvps_window_closed
             )
+            self.enable_entries(False)
             self.hvps_test_window.show()
+
+    def enable_entries(self, enable: bool) -> None:
+        """
+        Enables or disables the QLineEdits used for setting the voltages and solenoid current
+        """
+        for entry in self.entries:
+            entry.setEnabled(enable)
 
     def handle_hvps_test_complete(
         self,
@@ -554,6 +567,7 @@ class MainWindow(QMainWindow):
         Sets the object variable to None.
         """
         self.hvps_test_window = None
+        self.enable_entries(True)
 
     def handle_exit(self) -> None:
         """
