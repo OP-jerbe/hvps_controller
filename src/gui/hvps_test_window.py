@@ -27,9 +27,6 @@ from ..hvps.hvps_api import HVPSv3
 TODO: Figure out why the closeEvent method doesn't run when the window closes and fix.
 Saw that 500V remained on the Beam channel when the test window was closed while
 the 500V test was active.
-
-TODO: Make the channel selection gui its own window and remove it from the 
-HVPSTestWindowClass
 """
 
 
@@ -930,6 +927,7 @@ class HVPSTestWindow(QMainWindow):
         window_height = 600
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Solenoid Channel Test')
+        self.channel = 'SL'
 
         instructions: str = (
             '1. Plug in a 2-pin Fischer connector to the solenoid\n'
@@ -1044,6 +1042,7 @@ class HVPSTestWindow(QMainWindow):
         If the solenoid is on, turn it off and set the solenoid current target to zero.
         Adds the channel measurements to the measurements dictionary
         Adds the channel readbacks to the readbacks dictionary
+        Resets the channel_measurements and channel_readbacks lists
         Calls load_current_stage method.
         """
 
@@ -1056,6 +1055,8 @@ class HVPSTestWindow(QMainWindow):
 
         self.measurements[self.channel] = self.channel_measurements
         self.readbacks[self.channel] = self.channel_readbacks
+        self.channel_measurements = []
+        self.channel_readbacks = []
         self.current_stage_index += 1
         self.load_current_stage()
 
