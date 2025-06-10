@@ -1,4 +1,3 @@
-import traceback
 from pathlib import Path
 from socket import SocketType
 from typing import Callable
@@ -29,6 +28,9 @@ from ..hvps.hvps_api import HVPSv3
 TODO: Figure out why the closeEvent method doesn't run when the window closes and fix.
 Saw that 500V remained on the Beam channel when the test window was closed while
 the 500V test was active.
+
+TODO: Make the channel selection gui its own window and remove it from the 
+HVPSTestWindowClass
 """
 
 
@@ -413,12 +415,12 @@ class HVPSTestWindow(QDialog):
         self.ext_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
 
         # Create the validators
-        self.ext_pos_100V_measurement.setValidator(self.lv_validator)
-        self.ext_pos_500V_measurement.setValidator(self.lv_validator)
-        self.ext_pos_1kV_measurement.setValidator(self.hv_validator)
-        self.ext_neg_100V_measurement.setValidator(self.lv_validator)
-        self.ext_neg_500V_measurement.setValidator(self.lv_validator)
-        self.ext_neg_1kV_measurement.setValidator(self.hv_validator)
+        # self.ext_pos_100V_measurement.setValidator(self.lv_validator)
+        # self.ext_pos_500V_measurement.setValidator(self.lv_validator)
+        # self.ext_pos_1kV_measurement.setValidator(self.hv_validator)
+        # self.ext_neg_100V_measurement.setValidator(self.lv_validator)
+        # self.ext_neg_500V_measurement.setValidator(self.lv_validator)
+        # self.ext_neg_1kV_measurement.setValidator(self.hv_validator)
 
         # Connect the returnPressed Signals to the handle_voltage_returnPressed Slot
         self.ext_pos_100V_measurement.returnPressed.connect(
@@ -531,12 +533,12 @@ class HVPSTestWindow(QDialog):
         self.L1_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
 
         # Create the validators
-        self.L1_pos_100V_measurement.setValidator(self.lv_validator)
-        self.L1_pos_500V_measurement.setValidator(self.lv_validator)
-        self.L1_pos_1kV_measurement.setValidator(self.hv_validator)
-        self.L1_neg_100V_measurement.setValidator(self.lv_validator)
-        self.L1_neg_500V_measurement.setValidator(self.lv_validator)
-        self.L1_neg_1kV_measurement.setValidator(self.hv_validator)
+        # self.L1_pos_100V_measurement.setValidator(self.lv_validator)
+        # self.L1_pos_500V_measurement.setValidator(self.lv_validator)
+        # self.L1_pos_1kV_measurement.setValidator(self.hv_validator)
+        # self.L1_neg_100V_measurement.setValidator(self.lv_validator)
+        # self.L1_neg_500V_measurement.setValidator(self.lv_validator)
+        # self.L1_neg_1kV_measurement.setValidator(self.hv_validator)
 
         # Connect the returnPressed Signals to the handle_voltage_returnPressed Slot
         self.L1_pos_100V_measurement.returnPressed.connect(
@@ -649,12 +651,12 @@ class HVPSTestWindow(QDialog):
         self.L2_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
 
         # Create the validator
-        self.L2_pos_100V_measurement.setValidator(self.lv_validator)
-        self.L2_pos_500V_measurement.setValidator(self.lv_validator)
-        self.L2_pos_1kV_measurement.setValidator(self.hv_validator)
-        self.L2_neg_100V_measurement.setValidator(self.lv_validator)
-        self.L2_neg_500V_measurement.setValidator(self.lv_validator)
-        self.L2_neg_1kV_measurement.setValidator(self.hv_validator)
+        # self.L2_pos_100V_measurement.setValidator(self.lv_validator)
+        # self.L2_pos_500V_measurement.setValidator(self.lv_validator)
+        # self.L2_pos_1kV_measurement.setValidator(self.hv_validator)
+        # self.L2_neg_100V_measurement.setValidator(self.lv_validator)
+        # self.L2_neg_500V_measurement.setValidator(self.lv_validator)
+        # self.L2_neg_1kV_measurement.setValidator(self.hv_validator)
 
         # Connect the returnPressed Signals to the handle_voltage_returnPressed Slot
         self.L2_pos_100V_measurement.returnPressed.connect(
@@ -767,12 +769,12 @@ class HVPSTestWindow(QDialog):
         self.L3_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
 
         # Create the validators
-        self.L3_pos_100V_measurement.setValidator(self.lv_validator)
-        self.L3_pos_500V_measurement.setValidator(self.lv_validator)
-        self.L3_pos_1kV_measurement.setValidator(self.hv_validator)
-        self.L3_neg_100V_measurement.setValidator(self.lv_validator)
-        self.L3_neg_500V_measurement.setValidator(self.lv_validator)
-        self.L3_neg_1kV_measurement.setValidator(self.hv_validator)
+        # self.L3_pos_100V_measurement.setValidator(self.lv_validator)
+        # self.L3_pos_500V_measurement.setValidator(self.lv_validator)
+        # self.L3_pos_1kV_measurement.setValidator(self.hv_validator)
+        # self.L3_neg_100V_measurement.setValidator(self.lv_validator)
+        # self.L3_neg_500V_measurement.setValidator(self.lv_validator)
+        # self.L3_neg_1kV_measurement.setValidator(self.hv_validator)
 
         # Connect the returnPressed Signals to the handle_voltage_returnPressed Slot
         self.L3_pos_100V_measurement.returnPressed.connect(
@@ -885,12 +887,12 @@ class HVPSTestWindow(QDialog):
         self.L4_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
 
         # Create the validators
-        self.L4_pos_100V_measurement.setValidator(self.lv_validator)
-        self.L4_pos_500V_measurement.setValidator(self.lv_validator)
-        self.L4_pos_1kV_measurement.setValidator(self.hv_validator)
-        self.L4_neg_100V_measurement.setValidator(self.lv_validator)
-        self.L4_neg_500V_measurement.setValidator(self.lv_validator)
-        self.L4_neg_1kV_measurement.setValidator(self.hv_validator)
+        # self.L4_pos_100V_measurement.setValidator(self.lv_validator)
+        # self.L4_pos_500V_measurement.setValidator(self.lv_validator)
+        # self.L4_pos_1kV_measurement.setValidator(self.hv_validator)
+        # self.L4_neg_100V_measurement.setValidator(self.lv_validator)
+        # self.L4_neg_500V_measurement.setValidator(self.lv_validator)
+        # self.L4_neg_1kV_measurement.setValidator(self.hv_validator)
 
         # Connect the returnPressed Signals to the handle_voltage_returnPressed Slot
         self.L4_pos_100V_measurement.returnPressed.connect(
@@ -999,9 +1001,9 @@ class HVPSTestWindow(QDialog):
         self.current3_measurement = QLineEdit(placeholderText='Enter measurement')
 
         # Create the validators
-        self.current1_measurement.setValidator(self.sol_validator)
-        self.current2_measurement.setValidator(self.sol_validator)
-        self.current3_measurement.setValidator(self.sol_validator)
+        # self.current1_measurement.setValidator(self.sol_validator)
+        # self.current2_measurement.setValidator(self.sol_validator)
+        # self.current3_measurement.setValidator(self.sol_validator)
 
         # Connect the button-clicked Signal to the handle-current-entered Slot
         self.current1_measurement.returnPressed.connect(self.handle_current1_entered)
