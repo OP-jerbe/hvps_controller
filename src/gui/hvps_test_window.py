@@ -1,5 +1,4 @@
 from pathlib import Path
-from socket import SocketType
 from typing import Callable
 
 from PySide6.QtCore import QRegularExpression, Qt, Signal
@@ -10,13 +9,13 @@ from PySide6.QtGui import (
     QRegularExpressionValidator,
 )
 from PySide6.QtWidgets import (
-    QCheckBox,
-    QDialog,
     QFrame,
     QGridLayout,
     QLabel,
     QLineEdit,
+    QMainWindow,
     QPushButton,
+    QWidget,
 )
 from qt_material import apply_stylesheet
 
@@ -34,24 +33,23 @@ HVPSTestWindowClass
 """
 
 
-class HVPSTestWindow(QDialog):
+class HVPSTestWindow(QMainWindow):
     test_complete = Signal(list, dict, dict)
     window_closed = Signal()
 
-    def __init__(self, sock: SocketType, parent=None) -> None:
+    def __init__(self, hvps: HVPSv3, occupied_channels: list[str], parent=None) -> None:
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.Dialog)
 
-        # Get the socket and create the HVPS object
-        self.sock = sock
-        self.hvps: HVPSv3 = HVPSv3(sock)
+        # Get the HVPS object and the occupied channels
+        self.hvps = hvps
+        self.occupied_channels: list[str] = occupied_channels
 
         # Define the voltages and currents used for testing the HVPS
         self.test_voltages: tuple[str, ...] = ('100', '500', '1000')  # volts
         self.test_currents: tuple[str, ...] = ('0.3', '1.2', '2.5')  # amps
 
         # Make empty lists and dicts to hold measurement and readback data
-        self.occupied_channels: list[str] = []
         self.channel_readbacks: list[str] = []
         self.channel_measurements: list[str] = []
         self.readbacks: dict[str, list[str]] = {}
@@ -78,7 +76,7 @@ class HVPSTestWindow(QDialog):
         self.main_layout = QGridLayout()
 
         # Call the first gui window where the user selects the occupied channels.
-        self.create_channel_selection_gui()
+        self.test_plan()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """
@@ -198,54 +196,6 @@ class HVPSTestWindow(QDialog):
     ##### CREATE THE GUI WINDOWS #####
     ##################################
 
-    def create_channel_selection_gui(self) -> None:
-        """
-        Creates the checkbox widgets for the user to select which channels
-        are occupied in the HVPS.
-        """
-        window_width = 280
-        window_height = 180
-        self.setFixedSize(window_width, window_height)
-        self.setWindowTitle('Select Installed Channels')
-
-        self.beam_channel_chbx = QCheckBox('Beam')
-        self.beam_channel_chbx.setChecked(True)
-        self.ext_channel_chbx = QCheckBox('Extractor')
-        self.ext_channel_chbx.setChecked(True)
-        self.L1_channel_chbx = QCheckBox('Lens 1')
-        self.L1_channel_chbx.setChecked(True)
-        self.L2_channel_chbx = QCheckBox('Lens 2')
-        self.L3_channel_chbx = QCheckBox('Lens 3')
-        self.L4_channel_chbx = QCheckBox('Lens 4')
-        self.sol_channel_chbx = QCheckBox('Solenoid')
-        self.sol_channel_chbx.setChecked(True)
-
-        self.checkbox_channels: dict[QCheckBox, str] = {
-            self.beam_channel_chbx: 'BM',
-            self.ext_channel_chbx: 'EX',
-            self.L1_channel_chbx: 'L1',
-            self.L2_channel_chbx: 'L2',
-            self.L3_channel_chbx: 'L3',
-            self.L4_channel_chbx: 'L4',
-            self.sol_channel_chbx: 'SL',
-        }
-
-        self.channel_select_btn = QPushButton('Ok')
-        self.channel_select_btn.clicked.connect(self.handle_channel_select)
-
-        self.main_layout.addWidget(self.beam_channel_chbx, 0, 0)
-        self.main_layout.addWidget(self.ext_channel_chbx, 1, 0)
-        self.main_layout.addWidget(self.L1_channel_chbx, 0, 1)
-        self.main_layout.addWidget(self.L2_channel_chbx, 1, 1)
-        self.main_layout.addWidget(self.L3_channel_chbx, 0, 2)
-        self.main_layout.addWidget(self.L4_channel_chbx, 1, 2)
-        self.main_layout.addWidget(self.sol_channel_chbx, 2, 0)
-        self.main_layout.addWidget(
-            self.channel_select_btn, 3, 0, 1, 3, Qt.AlignmentFlag.AlignCenter
-        )
-
-        self.setLayout(self.main_layout)
-
     def create_beam_test_gui(self) -> None:
         """
         Creates the gui to test the beam channel
@@ -362,7 +312,10 @@ class HVPSTestWindow(QDialog):
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
-        self.setLayout(self.main_layout)
+        container = QWidget()
+        container.setLayout(self.main_layout)
+
+        self.setCentralWidget(container)
 
     def create_ext_test_gui(self) -> None:
         """
@@ -402,9 +355,9 @@ class HVPSTestWindow(QDialog):
         test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
         test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
         test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
-        test_neg_100V_btn.clicked.connect(self.handle_test_pos_1kV_btn)
-        test_neg_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
-        test_neg_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
+        test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
+        test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
+        test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
 
         # Create the entry boxes for recording the measured voltage values
         self.ext_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
@@ -480,7 +433,10 @@ class HVPSTestWindow(QDialog):
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
-        self.setLayout(self.main_layout)
+        container = QWidget()
+        container.setLayout(self.main_layout)
+
+        self.setCentralWidget(container)
 
     def create_L1_test_gui(self) -> None:
         """
@@ -598,7 +554,10 @@ class HVPSTestWindow(QDialog):
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
-        self.setLayout(self.main_layout)
+        container = QWidget()
+        container.setLayout(self.main_layout)
+
+        self.setCentralWidget(container)
 
     def create_L2_test_gui(self) -> None:
         """
@@ -716,7 +675,10 @@ class HVPSTestWindow(QDialog):
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
-        self.setLayout(self.main_layout)
+        container = QWidget()
+        container.setLayout(self.main_layout)
+
+        self.setCentralWidget(container)
 
     def create_L3_test_gui(self) -> None:
         """
@@ -834,7 +796,10 @@ class HVPSTestWindow(QDialog):
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
-        self.setLayout(self.main_layout)
+        container = QWidget()
+        container.setLayout(self.main_layout)
+
+        self.setCentralWidget(container)
 
     def create_L4_test_gui(self) -> None:
         """
@@ -952,7 +917,10 @@ class HVPSTestWindow(QDialog):
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
-        self.setLayout(self.main_layout)
+        container = QWidget()
+        container.setLayout(self.main_layout)
+
+        self.setCentralWidget(container)
 
     def create_sol_test_gui(self) -> None:
         """
@@ -1044,25 +1012,15 @@ class HVPSTestWindow(QDialog):
         self.main_layout.addWidget(vertical_line, 0, 2, 7, 1)
 
         self.main_layout.addWidget(photo, 0, 3, 7, 1)
-        self.setLayout(self.main_layout)
+
+        container = QWidget()
+        container.setLayout(self.main_layout)
+
+        self.setCentralWidget(container)
 
     ###############################
     ##### CREATE THE HANDLERS #####
     ###############################
-
-    def handle_channel_select(self) -> None:
-        """
-        Creates a list of the occupied channels from the user's selection
-        in the create_channel_selection_gui window. If the checkbox was
-        selected, the channel identifier (i.e. "BM", "EX", "L1", "SL", etc.)
-        are appended to self.occupied_channels.
-        Then self.test_plan() is called.
-        """
-
-        for chbx, channel in self.checkbox_channels.items():
-            if chbx.isChecked():
-                self.occupied_channels.append(channel)
-        self.test_plan()
 
     def handle_disable_hv_btn(self) -> None:
         """
