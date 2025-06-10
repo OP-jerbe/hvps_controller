@@ -3,28 +3,20 @@ from socket import SocketType
 from typing import Optional
 
 from PySide6.QtCore import (
-    QEvent,
-    QObject,
     QRegularExpression,
     Qt,
     QThread,
     QTimer,
-    Signal,
 )
 from PySide6.QtGui import (
     QAction,
     QCloseEvent,
     QIcon,
-    QMouseEvent,
     QRegularExpressionValidator,
 )
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
-    QFileDialog,
-    QFrame,
     QGridLayout,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMainWindow,
@@ -38,6 +30,7 @@ from qt_material import apply_stylesheet
 from helpers.constants import IP, PORT
 from helpers.helpers import close_socket, get_root_dir
 
+from ..gui.channel_selection_window import ChannelSelectionWindow
 from ..hvps.hvps_api import HVPSv3
 from ..pdf import HVPSReport
 from .bg_thread import Worker
@@ -71,6 +64,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.installEventFilter(self)
         self.version = version
+        self.occupied_channels: list[str] = ['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL']
         self.ip: str = IP
         self.port: str = str(PORT)
         self.sock: Optional[SocketType] = sock
@@ -147,6 +141,24 @@ class MainWindow(QMainWindow):
         )
 
         self.create_gui()
+        QTimer.singleShot(0, self.open_channel_selection_window)
+
+    def open_channel_selection_window(self) -> None:
+        self.channel_selection_window = ChannelSelectionWindow(self)
+        self.channel_selection_window.channels_selected.connect(
+            self.get_occupied_channels
+        )
+        self.channel_selection_window.window_closed.connect(
+            self.channel_selection_window_closed_event
+        )
+        self.channel_selection_window.exec()
+
+    def get_occupied_channels(self, occupied_channels: list[str]) -> None:
+        self.occupied_channels = occupied_channels
+
+    def channel_selection_window_closed_event(self) -> None:
+        print('Channel Selection Window Closed')
+        print(f'{self.occupied_channels = }')
 
     def update_readings(self) -> None:
         """
@@ -219,15 +231,15 @@ class MainWindow(QMainWindow):
         self.help_menu.addAction(self.open_user_guide_action)
 
         ##### Create the widgets #####
-        # Create the buttons
+        # Create the enable buttons
         self.hv_enable_btn = QPushButton('OFF')
         self.sol_enable_btn = QPushButton('OFF')
 
-        # Set the buttons to be checkable so they have two states
+        # Set the enable buttons to be checkable so they have two states
         self.hv_enable_btn.setCheckable(True)
         self.sol_enable_btn.setCheckable(True)
 
-        # Connect the buttons to slots when clicked
+        # Connect the enable buttons to their handlers
         self.hv_enable_btn.clicked.connect(self.handle_hv_enable_btn)
         self.sol_enable_btn.clicked.connect(self.handle_sol_enable_btn)
 
@@ -496,12 +508,14 @@ class MainWindow(QMainWindow):
         # Check that there isn't already a test window open and that there is a socket connection
         # If all ok, then open up the test window.
         if self.hvps_test_window is None and self.sock is not None:
-            self.hvps_test_window = HVPSTestWindow(sock=self.sock, parent=self)
+            self.hvps_test_window = HVPSTestWindow(
+                hvps=self.hvps, occupied_channels=self.occupied_channels, parent=self
+            )
             self.hvps_test_window.test_complete.connect(self.handle_hvps_test_complete)
             self.hvps_test_window.window_closed.connect(
                 self.handle_test_hvps_window_closed
             )
-            self.hvps_test_window.exec()
+            self.hvps_test_window.show()
 
     def handle_hvps_test_complete(
         self,
@@ -516,7 +530,6 @@ class MainWindow(QMainWindow):
         Shows a message box that lets the user know the test is finished
         and asks if they want to print a test report.
         """
-        print('handle_hvps_test_complete was called')
         self.occupied_channels = occupied_channels
         self.test_readbacks = readbacks
         self.test_measurements = measurements
