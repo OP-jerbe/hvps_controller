@@ -46,11 +46,121 @@ class HVPSTestWindow(QMainWindow):
         self.test_voltages: tuple[str, ...] = ('100', '500', '1000')  # volts
         self.test_currents: tuple[str, ...] = ('0.3', '1.2', '2.5')  # amps
 
-        # Make empty lists and dicts to hold measurement and readback data
+        # Make empty lists to hold measurement and readback data
         self.channel_readbacks: list[str] = []
         self.channel_measurements: list[str] = []
-        self.readbacks: dict[str, list[str]] = {}
-        self.measurements: dict[str, list[str]] = {}
+
+        # Make pre-populated dictionaries to hold the readback and measurement data
+        self.readbacks: dict[str, list[str]] = {
+            'BM': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'EX': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'L1': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'L2': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'L3': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'L4': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'SL': [
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+        }
+        self.measurements: dict[str, list[str]] = {
+            'BM': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'EX': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'L1': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'L2': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'L3': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'L4': [
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+            'SL': [
+                'N/A',
+                'N/A',
+                'N/A',
+            ],
+        }
 
         # Set the window Icon and style the window
         self.root_dir: Path = get_root_dir()
