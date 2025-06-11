@@ -64,12 +64,16 @@ class HVPSv3:
 
         ##### LOGIC #####
         # Check to make sure solenoid is installed in the HVPS.
+        # Handle empty string arguement
         # Convert the current argument to a float to make sure input has a decimal point.
         # Convert the float back to a string with two decimal places.
         # Input the current value into the command.
 
         if 'SL' not in self.occupied_channels:
             return
+
+        if current == '':
+            current = '0'
 
         num = float(current)
         current = f'{num:.2f}'
@@ -84,6 +88,7 @@ class HVPSv3:
         ##### LOGIC #####
         # Check to make sure the channel is installed into the HVPS
         # Disallow setting the solenoid voltage.
+        # Handle empty string arguement
         # Set the prefix of the command.
         # Get the sign used to set the voltage then remove it from the voltage string.
         # With the sign removed, pad the front of the string with zeros so voltage has 5 characters.
@@ -98,6 +103,9 @@ class HVPSv3:
             raise ValueError('"SL" is not a valid channel for setting voltage.')
 
         command_prefix = f'ST{channel}T'
+
+        if voltage == '':
+            voltage = '0'
 
         if '-' in voltage:
             sign = '-'
