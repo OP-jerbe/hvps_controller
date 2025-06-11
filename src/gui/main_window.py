@@ -557,6 +557,12 @@ class MainWindow(QMainWindow):
         for btn in [self.hv_enable_btn, self.sol_enable_btn]:
             btn.setEnabled(enable)
 
+        if not enable:
+            self.hv_enable_btn.setChecked(False)
+            self.hv_enable_btn.setText('OFF')
+            self.sol_enable_btn.setChecked(False)
+            self.sol_enable_btn.setText('OFF')
+
     def handle_hvps_test_complete(
         self,
         occupied_channels: list[str],
