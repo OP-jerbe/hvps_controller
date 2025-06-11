@@ -455,6 +455,11 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(voltage_readback_layout, 3, 2)
         main_layout.addLayout(current_readback_layout, 3, 3)
 
+        main_layout.setColumnStretch(0, 2)  # label_layout
+        main_layout.setColumnStretch(1, 2)  # entry_layout
+        main_layout.setColumnStretch(2, 2)  # voltage_readback_layout
+        main_layout.setColumnStretch(3, 2)  # current_readback_layout
+
         container = QWidget()
         container.setLayout(main_layout)
 
