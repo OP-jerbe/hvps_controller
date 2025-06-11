@@ -1,5 +1,6 @@
 from pathlib import Path
 from socket import SocketType
+from threading import Lock
 from typing import Optional
 
 from PySide6.QtCore import (
@@ -69,6 +70,7 @@ class MainWindow(QMainWindow):
         self.port: str = str(PORT)
         self.sock: Optional[SocketType] = sock
         self.hvps: Optional[HVPSv3] = None
+        self.hvps_lock = Lock()
         if self.sock:
             self.hvps = HVPSv3(self.sock)
 
@@ -171,23 +173,34 @@ class MainWindow(QMainWindow):
 
         # Get the voltage and current readbacks from the HVPSv3 and set the QLabel
         # text in the gui.
-        for channel, v_readback, i_readback, v_readback_label, i_readback_label in zip(
-            self.hvps.all_channels,
-            self.voltage_readbacks,
-            self.current_readbacks,
-            self.Vreadback_labels,
-            self.Ireadback_labels,
-        ):
-            # Get the voltage and current readbacks from the HVPS
-            v_readback = self.hvps.get_voltage(channel).strip(f'{channel}V ')
-            i_readback = self.hvps.get_current(channel).strip(f'{channel}C ')
+        with self.hvps_lock:
+            for (
+                channel,
+                v_readback,
+                i_readback,
+                v_readback_label,
+                i_readback_label,
+            ) in zip(
+                self.hvps.all_channels,
+                self.voltage_readbacks,
+                self.current_readbacks,
+                self.Vreadback_labels,
+                self.Ireadback_labels,
+            ):
+                # Get the voltage and current readbacks from the HVPS
+                v_readback = self.hvps.get_voltage(channel).strip(f'{channel}V ')
+                i_readback = self.hvps.get_current(channel).strip(f'{channel}C ')
 
-            # Set the readback labels
-            v_readback_label.setText(f'{v_readback} V')
-            if channel != 'SL':
-                i_readback_label.setText(f'{i_readback} uA')
-            else:
-                i_readback_label.setText(f'{i_readback} A')
+                i_readback = float(i_readback)
+
+                if channel != 'SL':
+                    v_readback = int(v_readback)
+                    v_readback_label.setText(f'{v_readback} V')
+                    i_readback_label.setText(f'{i_readback:.2f} uA')
+                else:
+                    v_readback = float(v_readback)
+                    v_readback_label.setText(f'{v_readback:.2f} V')
+                    i_readback_label.setText(f'{i_readback:.2f} A')
 
     def create_gui(self) -> None:
         window_width = 330
@@ -514,7 +527,10 @@ class MainWindow(QMainWindow):
         # If all ok, then open up the test window.
         if self.hvps_test_window is None and self.sock is not None:
             self.hvps_test_window = HVPSTestWindow(
-                hvps=self.hvps, occupied_channels=self.occupied_channels, parent=self
+                hvps=self.hvps,
+                occupied_channels=self.occupied_channels,
+                hvps_lock=self.hvps_lock,
+                parent=self,
             )
             self.hvps_test_window.test_complete.connect(self.handle_hvps_test_complete)
             self.hvps_test_window.window_closed.connect(
@@ -595,11 +611,11 @@ class MainWindow(QMainWindow):
         else:
             self.hv_enable_btn.setText('ON')
             self.hvps.enable_high_voltage()
-            # for (line_edit, setting), channel in zip(
-            #     self.voltage_entries.items(), self.hvps.occupied_channels
-            # ):
-            #     setting = line_edit.text()
-            #     self.hvps.set_voltage(channel, setting)
+            for (line_edit, setting), channel in zip(
+                self.voltage_entries.items(), self.hvps.occupied_channels
+            ):
+                setting = line_edit.text()
+                self.hvps.set_voltage(channel, setting)
 
     def handle_sol_enable_btn(self) -> None:
         """
@@ -644,48 +660,28 @@ class MainWindow(QMainWindow):
             focused_widget.clearFocus()
             return
 
-        match focused_widget:
-            case self.beam_entry:
-                setting = self.beam_entry.text()
-                if setting == '':
-                    self.hvps.set_voltage('BM', '0')
-                else:
+        with self.hvps_lock:
+            match focused_widget:
+                case self.beam_entry:
+                    setting = self.beam_entry.text()
                     self.hvps.set_voltage('BM', setting)
-            case self.ext_entry:
-                setting = self.ext_entry.text()
-                if setting == '':
-                    self.hvps.set_voltage('EX', '0')
-                else:
+                case self.ext_entry:
+                    setting = self.ext_entry.text()
                     self.hvps.set_voltage('EX', setting)
-            case self.L1_entry:
-                setting = self.L1_entry.text()
-                if setting == '':
-                    self.hvps.set_voltage('L1', '0')
-                else:
+                case self.L1_entry:
+                    setting = self.L1_entry.text()
                     self.hvps.set_voltage('L1', setting)
-            case self.L2_entry:
-                setting = self.L2_entry.text()
-                if setting == '':
-                    self.hvps.set_voltage('L2', '0')
-                else:
+                case self.L2_entry:
+                    setting = self.L2_entry.text()
                     self.hvps.set_voltage('L2', setting)
-            case self.L3_entry:
-                setting = self.L3_entry.text()
-                if setting == '':
-                    self.hvps.set_voltage('L3', '0')
-                else:
+                case self.L3_entry:
+                    setting = self.L3_entry.text()
                     self.hvps.set_voltage('L3', setting)
-            case self.L4_entry:
-                setting = self.L4_entry.text()
-                if setting == '':
-                    self.hvps.set_voltage('L4', '0')
-                else:
+                case self.L4_entry:
+                    setting = self.L4_entry.text()
                     self.hvps.set_voltage('L4', setting)
-            case self.sol_entry:
-                setting = self.sol_entry.text()
-                if setting == '':
-                    self.hvps.set_voltage('SL', '0')
-                else:
+                case self.sol_entry:
+                    setting = self.sol_entry.text()
                     self.hvps.set_voltage('SL', setting)
 
         focused_widget.clearFocus()
