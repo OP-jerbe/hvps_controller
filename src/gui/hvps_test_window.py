@@ -23,12 +23,6 @@ from helpers.helpers import get_root_dir
 
 from ..hvps.hvps_api import HVPSv3
 
-"""
-TODO: Figure out why the closeEvent method doesn't run when the window closes and fix.
-Saw that 500V remained on the Beam channel when the test window was closed while
-the 500V test was active.
-"""
-
 
 class HVPSTestWindow(QMainWindow):
     test_complete = Signal(list, dict, dict)
@@ -36,7 +30,6 @@ class HVPSTestWindow(QMainWindow):
 
     def __init__(self, hvps: HVPSv3, occupied_channels: list[str], parent=None) -> None:
         super().__init__(parent)
-        self.setWindowFlags(Qt.WindowType.Dialog)
 
         # Get the HVPS object and the occupied channels
         self.hvps = hvps
@@ -194,11 +187,11 @@ class HVPSTestWindow(QMainWindow):
         solenoid current and sets the solenoid current target to zero.
         Emits the window_closed Signal.
         """
-        if self.get_hv_enable_state is True:
+        if self.get_hv_enable_state() is True:
             print('Turning off HV.')
             self.hvps.disable_high_voltage()
             self.hvps.set_voltage(self.channel, '0')
-        if self.get_sol_enable_state is True:
+        if self.get_sol_enable_state() is True:
             print('Turning off current.')
             self.hvps.disable_solenoid_current()
             self.hvps.set_solenoid_current('0')
