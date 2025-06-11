@@ -18,6 +18,8 @@ TODO:
 3) Get the actual pictures showing voltmeter setup for each test into the assets folder.
 
 4) Write the User Guide
+
+5) Add in serial number QLineEdit for the test report
 """
 
 
