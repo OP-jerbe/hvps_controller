@@ -267,8 +267,7 @@ class MainWindow(QMainWindow):
 
         # If a socket connection was not made upon opening, disable the buttons
         if not self.sock:
-            self.hv_enable_btn.setEnabled(False)
-            self.sol_enable_btn.setEnabled(False)
+            self.enable_IO_btns(False)
             self.run_test_action.setEnabled(False)
 
         # Create the Qlabels
@@ -497,6 +496,7 @@ class MainWindow(QMainWindow):
         self.hv_enable_btn.setEnabled(True)
         self.sol_enable_btn.setEnabled(True)
         self.enable_entries(True)
+        self.enable_IO_btns(True)
 
     def handle_connection_window_closed(self, ip: str, port: str) -> None:
         """
@@ -544,6 +544,7 @@ class MainWindow(QMainWindow):
                 self.handle_test_hvps_window_closed
             )
             self.enable_entries(False)
+            self.enable_IO_btns(False)
             self.hvps_test_window.show()
 
     def enable_entries(self, enable: bool) -> None:
@@ -552,6 +553,10 @@ class MainWindow(QMainWindow):
         """
         for entry in self.entries:
             entry.setEnabled(enable)
+
+    def enable_IO_btns(self, enable: bool) -> None:
+        for btn in [self.hv_enable_btn, self.sol_enable_btn]:
+            btn.setEnabled(enable)
 
     def handle_hvps_test_complete(
         self,
@@ -591,12 +596,7 @@ class MainWindow(QMainWindow):
         """
         self.hvps_test_window = None
         self.enable_entries(True)
-
-    def handle_exit(self) -> None:
-        """
-        Quits the application
-        """
-        QApplication.quit()
+        self.enable_IO_btns(True)
 
     def open_user_guide(self) -> None:
         """
@@ -639,6 +639,12 @@ class MainWindow(QMainWindow):
                 self.hvps.enable_solenoid_current()
                 self.hvps.set_solenoid_current(self.sol_setting)
 
+    def handle_exit(self) -> None:
+        """
+        Quits the application
+        """
+        self.close()
+
     def on_worker_stopped(self) -> None:
         self.worker_thread.quit()
         self.worker_thread.wait()
@@ -647,17 +653,20 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """
-        Handles what happens when the application is closed.
-        If there is socket connection, terminate the connection.
+        Handles what happens when the main window is closed.
+        If self._ready_to_quit is True, close the socket and accept the close event.
+        Otherwise, tell the worker to emit the `stop_requested` Signal which will
+        tell the thread to stop and then emit the `stopped` Signal which will trigger
+        the `on_worker_stopped` method which will terminate the thread and close
+        the window.
         """
         if self._ready_to_quit:
+            if self.sock:
+                close_socket(self.sock)
             event.accept()
         else:
-            self._ready_to_quit = False
             self.worker.stop_requested.emit()
-            event.ignore()  # wait for cleanup
-        if self.sock:
-            close_socket(self.sock)
+            event.ignore()
         super().closeEvent(event)
 
     def handle_return_pressed(self) -> None:
