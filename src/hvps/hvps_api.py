@@ -1,5 +1,6 @@
 import socket
 from socket import SocketType
+from threading import Lock
 from typing import Literal
 
 Channels = Literal['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL']
@@ -29,6 +30,7 @@ class HVPSv3:
         ),
     ) -> None:
         self.sock = sock
+        self.lock = Lock()
         self.occupied_channels = occupied_channels
         self.all_channels: tuple[Channels, ...] = (
             'BM',
@@ -49,8 +51,9 @@ class HVPSv3:
             query += '\n'
 
         try:
-            self.sock.sendall(query.encode())
-            response = self.sock.recv(1024)
+            with self.lock:
+                self.sock.sendall(query.encode())
+                response = self.sock.recv(1024)
             return response.decode().strip()
 
         except socket.error as e:
