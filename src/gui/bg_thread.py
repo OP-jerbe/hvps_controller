@@ -8,7 +8,6 @@ class Worker(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self.counter = 0
         self.timer = None
         self.stop_requested.connect(self.stop)
 
