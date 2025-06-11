@@ -646,18 +646,46 @@ class MainWindow(QMainWindow):
 
         match focused_widget:
             case self.beam_entry:
-                self.hvps.set_voltage('BM', self.beam_entry.text())
+                setting = self.beam_entry.text()
+                if setting == '':
+                    self.hvps.set_voltage('BM', '0')
+                else:
+                    self.hvps.set_voltage('BM', setting)
             case self.ext_entry:
-                self.hvps.set_voltage('EX', self.ext_entry.text())
+                setting = self.ext_entry.text()
+                if setting == '':
+                    self.hvps.set_voltage('EX', '0')
+                else:
+                    self.hvps.set_voltage('EX', setting)
             case self.L1_entry:
-                self.hvps.set_voltage('L1', self.L1_entry.text())
+                setting = self.L1_entry.text()
+                if setting == '':
+                    self.hvps.set_voltage('L1', '0')
+                else:
+                    self.hvps.set_voltage('L1', setting)
             case self.L2_entry:
-                self.hvps.set_voltage('L2', self.L2_entry.text())
+                setting = self.L2_entry.text()
+                if setting == '':
+                    self.hvps.set_voltage('L2', '0')
+                else:
+                    self.hvps.set_voltage('L2', setting)
             case self.L3_entry:
-                self.hvps.set_voltage('L3', self.L3_entry.text())
+                setting = self.L3_entry.text()
+                if setting == '':
+                    self.hvps.set_voltage('L3', '0')
+                else:
+                    self.hvps.set_voltage('L3', setting)
             case self.L4_entry:
-                self.hvps.set_voltage('L4', self.L4_entry.text())
+                setting = self.L4_entry.text()
+                if setting == '':
+                    self.hvps.set_voltage('L4', '0')
+                else:
+                    self.hvps.set_voltage('L4', setting)
             case self.sol_entry:
-                self.hvps.set_solenoid_current(self.sol_entry.text())
+                setting = self.sol_entry.text()
+                if setting == '':
+                    self.hvps.set_voltage('SL', '0')
+                else:
+                    self.hvps.set_voltage('SL', setting)
 
         focused_widget.clearFocus()
