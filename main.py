@@ -8,6 +8,18 @@ from helpers.constants import IP, PORT, TIMEOUT
 from helpers.helpers import open_socket
 from src.gui.main_window import MainWindow
 
+"""
+TODO:
+1) Add a `BACK` button to the test window that allows the user to go back to the previous channel test
+
+2) Add a `RESTART` button to the test window that allows the user to restart the current test
+(or figure out a way add the measurements and readbacks to their proper spots in the readbacks and measurements lists)
+
+3) Get the actual pictures showing voltmeter setup for each test into the assets folder.
+
+4) Write the User Guide
+"""
+
 
 def run_app(sock: Optional[SocketType]) -> NoReturn:
     """
