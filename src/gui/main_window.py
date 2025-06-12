@@ -62,6 +62,7 @@ class MainWindow(QMainWindow):
         self.installEventFilter(self)
         self.version = version
         self.occupied_channels: list[str] = ['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL']
+        self.serial_number: str = ''
         self.ip: str = IP
         self.port: str = str(PORT)
         self.sock: Optional[SocketType] = sock
@@ -145,6 +146,9 @@ class MainWindow(QMainWindow):
         self.channel_selection_window.channels_selected.connect(
             self.get_occupied_channels
         )
+        self.channel_selection_window.serial_number_entered.connect(
+            self.get_serial_number
+        )
         self.channel_selection_window.window_closed.connect(
             self.channel_selection_window_closed_event
         )
@@ -152,6 +156,9 @@ class MainWindow(QMainWindow):
 
     def get_occupied_channels(self, occupied_channels: list[str]) -> None:
         self.occupied_channels = occupied_channels
+
+    def get_serial_number(self, serial_number: str) -> None:
+        self.serial_number = serial_number
 
     def channel_selection_window_closed_event(self) -> None:
         print('Channel Selection Window Closed')
@@ -565,7 +572,6 @@ class MainWindow(QMainWindow):
 
     def handle_hvps_test_complete(
         self,
-        occupied_channels: list[str],
         readbacks: dict[str, list[str]],
         measurements: dict[str, list[str]],
     ) -> None:
@@ -576,7 +582,6 @@ class MainWindow(QMainWindow):
         Shows a message box that lets the user know the test is finished
         and asks if they want to print a test report.
         """
-        self.occupied_channels = occupied_channels
         self.test_readbacks = readbacks
         self.test_measurements = measurements
 
@@ -587,7 +592,7 @@ class MainWindow(QMainWindow):
 
         if result == QMessageBox.StandardButton.Yes:
             test_report_pdf = HVPSReport(
-                serial_number='None',
+                serial_number=self.serial_number,
                 occupied_channels=self.occupied_channels,
                 readbacks=self.test_readbacks,
                 measurements=self.test_measurements,

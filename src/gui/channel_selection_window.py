@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
     QGridLayout,
+    QLineEdit,
     QPushButton,
 )
 
@@ -15,6 +16,7 @@ class ChannelSelectionWindow(QDialog):
     """
 
     channels_selected = Signal(list)
+    serial_number_entered = Signal(str)
     window_closed = Signal()
 
     def __init__(self, parent=None) -> None:
@@ -28,10 +30,14 @@ class ChannelSelectionWindow(QDialog):
         are occupied in the HVPS.
         """
         window_width = 280
-        window_height = 180
+        window_height = 200
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Select Installed Channels')
         self.occupied_channels: list = []
+        self.serial_number: str = ''
+
+        # Create the serial number QLineEdit
+        self.serial_number_entry = QLineEdit(placeholderText='Enter HVPS Serial Number')
 
         # Create the checkboxes
         beam_channel_chbx = QCheckBox('Beam')
@@ -42,7 +48,7 @@ class ChannelSelectionWindow(QDialog):
         L4_channel_chbx = QCheckBox('Lens 4')
         sol_channel_chbx = QCheckBox('Solenoid')
 
-        # Set the most commonly used channels to be automatically checked\
+        # Set the most commonly used channels to be automatically checked.
         beam_channel_chbx.setChecked(True)
         ext_channel_chbx.setChecked(True)
         L1_channel_chbx.setChecked(True)
@@ -65,15 +71,16 @@ class ChannelSelectionWindow(QDialog):
 
         # Create the layout
         main_layout = QGridLayout()
-        main_layout.addWidget(beam_channel_chbx, 0, 0)
-        main_layout.addWidget(ext_channel_chbx, 1, 0)
-        main_layout.addWidget(L1_channel_chbx, 0, 1)
-        main_layout.addWidget(L2_channel_chbx, 1, 1)
-        main_layout.addWidget(L3_channel_chbx, 0, 2)
-        main_layout.addWidget(L4_channel_chbx, 1, 2)
-        main_layout.addWidget(sol_channel_chbx, 2, 0)
+        main_layout.addWidget(self.serial_number_entry, 0, 0, 1, 3)
+        main_layout.addWidget(beam_channel_chbx, 1, 0)
+        main_layout.addWidget(ext_channel_chbx, 2, 0)
+        main_layout.addWidget(L1_channel_chbx, 1, 1)
+        main_layout.addWidget(L2_channel_chbx, 2, 1)
+        main_layout.addWidget(L3_channel_chbx, 1, 2)
+        main_layout.addWidget(L4_channel_chbx, 2, 2)
+        main_layout.addWidget(sol_channel_chbx, 3, 0)
         main_layout.addWidget(
-            channel_select_btn, 3, 0, 1, 3, Qt.AlignmentFlag.AlignCenter
+            channel_select_btn, 4, 0, 1, 3, Qt.AlignmentFlag.AlignCenter
         )
 
         self.setLayout(main_layout)
@@ -82,7 +89,9 @@ class ChannelSelectionWindow(QDialog):
         for chbx, channel in self.checkbox_channels.items():
             if chbx.isChecked():
                 self.occupied_channels.append(channel)
+        self.serial_number = self.serial_number_entry.text()
         self.channels_selected.emit(self.occupied_channels)
+        self.serial_number_entered.emit(self.serial_number)
         self.close()
 
     def closeEvent(self, event: QCloseEvent) -> None:
