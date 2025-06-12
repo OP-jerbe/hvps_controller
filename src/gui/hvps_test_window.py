@@ -284,7 +284,8 @@ class HVPSTestWindow(QMainWindow):
         emits the test_complete signal and closes the window.
         """
         if self.current_stage_index < len(self.test_stages):
-            self.clear_layout()
+            if self.current_stage_index > 0:
+                self.clear_layout()
             self.test_stages[self.current_stage_index]()
         else:
             self.test_complete.emit(
