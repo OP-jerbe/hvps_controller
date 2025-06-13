@@ -12,16 +12,9 @@ from src.gui.main_window import MainWindow
 TODO:
 1) Add a `BACK` button to the test window that allows the user to go back to the previous channel test
 
-2) Add a `RESTART` button to the test window that allows the user to restart the current test
-(or figure out a way add the measurements and readbacks to their proper spots in the readbacks and measurements lists)
-######## I think I figured this out. Need to test out the HVPSTestWindow.
-######## Make sure QLineEdits are disabled when the gui is loaded.
-######## Make sure when the Test HV button is pressed, the correct QLineEdit is enabled and the other buttons are disabled and focus moves to QLineEdit
-######## Make sure when enter is pressed, the QLineEdit is disabled, the buttons are enabled and the focus goes to the next button.
+2) Get the actual pictures showing voltmeter setup for each test into the assets folder.
 
-3) Get the actual pictures showing voltmeter setup for each test into the assets folder.
-
-4) Write the User Guide
+3) Write the User Guide
 """
 
 
@@ -41,6 +34,8 @@ def run_app(sock: Optional[SocketType]) -> NoReturn:
 
 
 if __name__ == '__main__':
-    # try and connect to the HVPS then run the app.
+    """
+    Try to open a connection to the HVPS then run the app.
+    """
     sock = open_socket(IP, PORT, TIMEOUT)
     run_app(sock)
