@@ -25,7 +25,7 @@ from ..hvps.hvps_api import HVPSv3
 
 
 class HVPSTestWindow(QMainWindow):
-    test_complete = Signal(list, dict, dict)
+    test_complete = Signal(dict, dict)
     window_closed = Signal()
 
     def __init__(self, hvps: HVPSv3, occupied_channels: list[str], parent=None) -> None:
@@ -56,114 +56,22 @@ class HVPSTestWindow(QMainWindow):
 
         # Make pre-populated dictionaries to hold the readback and measurement data
         self.readbacks: dict[str, list[str]] = {
-            'BM': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'EX': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'L1': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'L2': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'L3': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'L4': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'SL': [
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
+            'BM': ['N/A'] * 6,
+            'EX': ['N/A'] * 6,
+            'L1': ['N/A'] * 6,
+            'L2': ['N/A'] * 6,
+            'L3': ['N/A'] * 6,
+            'L4': ['N/A'] * 6,
+            'SL': ['N/A'] * 3,
         }
         self.measurements: dict[str, list[str]] = {
-            'BM': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'EX': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'L1': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'L2': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'L3': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'L4': [
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
-            'SL': [
-                'N/A',
-                'N/A',
-                'N/A',
-            ],
+            'BM': ['N/A'] * 6,
+            'EX': ['N/A'] * 6,
+            'L1': ['N/A'] * 6,
+            'L2': ['N/A'] * 6,
+            'L3': ['N/A'] * 6,
+            'L4': ['N/A'] * 6,
+            'SL': ['N/A'] * 3,
         }
 
         # Set the window Icon and style the window
@@ -298,9 +206,7 @@ class HVPSTestWindow(QMainWindow):
                 self.clear_layout()
             self.test_stages[self.current_stage_index]()
         else:
-            self.test_complete.emit(
-                self.occupied_channels, self.readbacks, self.measurements
-            )
+            self.test_complete.emit(self.readbacks, self.measurements)
             self.close()
 
     ##################################
@@ -502,6 +408,14 @@ class HVPSTestWindow(QMainWindow):
         self.ext_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.ext_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
 
+        # Set the QLine edits to be disabled
+        self.ext_pos_100V_measurement.setEnabled(False)
+        self.ext_pos_500V_measurement.setEnabled(False)
+        self.ext_pos_1kV_measurement.setEnabled(False)
+        self.ext_neg_100V_measurement.setEnabled(False)
+        self.ext_neg_500V_measurement.setEnabled(False)
+        self.ext_neg_1kV_measurement.setEnabled(False)
+
         # Create the validators
         # self.ext_pos_100V_measurement.setValidator(self.lv_validator)
         # self.ext_pos_500V_measurement.setValidator(self.lv_validator)
@@ -630,6 +544,14 @@ class HVPSTestWindow(QMainWindow):
         self.L1_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L1_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L1_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
+
+        # Set the QLine edits to be disabled
+        self.L1_pos_100V_measurement.setEnabled(False)
+        self.L1_pos_500V_measurement.setEnabled(False)
+        self.L1_pos_1kV_measurement.setEnabled(False)
+        self.L1_neg_100V_measurement.setEnabled(False)
+        self.L1_neg_500V_measurement.setEnabled(False)
+        self.L1_neg_1kV_measurement.setEnabled(False)
 
         # Create the validators
         # self.L1_pos_100V_measurement.setValidator(self.lv_validator)
@@ -760,6 +682,14 @@ class HVPSTestWindow(QMainWindow):
         self.L2_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L2_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
 
+        # Set the QLine edits to be disabled
+        self.L2_pos_100V_measurement.setEnabled(False)
+        self.L2_pos_500V_measurement.setEnabled(False)
+        self.L2_pos_1kV_measurement.setEnabled(False)
+        self.L2_neg_100V_measurement.setEnabled(False)
+        self.L2_neg_500V_measurement.setEnabled(False)
+        self.L2_neg_1kV_measurement.setEnabled(False)
+
         # Create the validator
         # self.L2_pos_100V_measurement.setValidator(self.lv_validator)
         # self.L2_pos_500V_measurement.setValidator(self.lv_validator)
@@ -888,6 +818,14 @@ class HVPSTestWindow(QMainWindow):
         self.L3_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L3_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L3_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
+
+        # Set the QLine edits to be disabled
+        self.L3_pos_100V_measurement.setEnabled(False)
+        self.L3_pos_500V_measurement.setEnabled(False)
+        self.L3_pos_1kV_measurement.setEnabled(False)
+        self.L3_neg_100V_measurement.setEnabled(False)
+        self.L3_neg_500V_measurement.setEnabled(False)
+        self.L3_neg_1kV_measurement.setEnabled(False)
 
         # Create the validators
         # self.L3_pos_100V_measurement.setValidator(self.lv_validator)
@@ -1018,6 +956,14 @@ class HVPSTestWindow(QMainWindow):
         self.L4_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L4_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
 
+        # Set the QLine edits to be disabled
+        self.L4_pos_100V_measurement.setEnabled(False)
+        self.L4_pos_500V_measurement.setEnabled(False)
+        self.L4_pos_1kV_measurement.setEnabled(False)
+        self.L4_neg_100V_measurement.setEnabled(False)
+        self.L4_neg_500V_measurement.setEnabled(False)
+        self.L4_neg_1kV_measurement.setEnabled(False)
+
         # Create the validators
         # self.L4_pos_100V_measurement.setValidator(self.lv_validator)
         # self.L4_pos_500V_measurement.setValidator(self.lv_validator)
@@ -1140,6 +1086,11 @@ class HVPSTestWindow(QMainWindow):
         self.current1_measurement = QLineEdit(placeholderText='Enter measurement')
         self.current2_measurement = QLineEdit(placeholderText='Enter measurement')
         self.current3_measurement = QLineEdit(placeholderText='Enter measurement')
+
+        # Set the QLine edits to be disabled
+        self.current1_measurement.setEnabled(False)
+        self.current2_measurement.setEnabled(False)
+        self.current3_measurement.setEnabled(False)
 
         # Create the validators
         # self.current1_measurement.setValidator(self.sol_validator)
@@ -1588,6 +1539,8 @@ class HVPSTestWindow(QMainWindow):
         self.beam_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
         self.next_btn.setFocus()
 
     # Create the Extractor pressReturn event handlers
@@ -1681,6 +1634,7 @@ class HVPSTestWindow(QMainWindow):
         self.hvps.disable_high_voltage()
         for button in self.hv_buttons:
             button.setEnabled(True)
+        self.test_pos_500V_btn.setFocus()
 
     def handle_L1_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
@@ -1693,6 +1647,7 @@ class HVPSTestWindow(QMainWindow):
         self.hvps.disable_high_voltage()
         for button in self.hv_buttons:
             button.setEnabled(True)
+        self.test_pos_1kV_btn.setFocus()
 
     def handle_L1_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
@@ -1705,6 +1660,7 @@ class HVPSTestWindow(QMainWindow):
         self.hvps.disable_high_voltage()
         for button in self.hv_buttons:
             button.setEnabled(True)
+        self.test_neg_100V_btn.setFocus()
 
     def handle_L1_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
@@ -1717,6 +1673,7 @@ class HVPSTestWindow(QMainWindow):
         self.hvps.disable_high_voltage()
         for button in self.hv_buttons:
             button.setEnabled(True)
+        self.test_neg_500V_btn.setFocus()
 
     def handle_L1_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
@@ -1729,6 +1686,7 @@ class HVPSTestWindow(QMainWindow):
         self.hvps.disable_high_voltage()
         for button in self.hv_buttons:
             button.setEnabled(True)
+        self.test_neg_1kV_btn.setFocus()
 
     def handle_L1_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
@@ -1741,6 +1699,7 @@ class HVPSTestWindow(QMainWindow):
         self.hvps.disable_high_voltage()
         for button in self.hv_buttons:
             button.setEnabled(True)
+        self.next_btn.setFocus()
 
     # Create the L2 pressReturn event handler
     def handle_L2_pos_100V_entered(self) -> None:
