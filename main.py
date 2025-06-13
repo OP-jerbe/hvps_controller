@@ -14,6 +14,10 @@ TODO:
 
 2) Add a `RESTART` button to the test window that allows the user to restart the current test
 (or figure out a way add the measurements and readbacks to their proper spots in the readbacks and measurements lists)
+######## I think I figured this out. Need to test out the HVPSTestWindow.
+######## Make sure QLineEdits are disabled when the gui is loaded.
+######## Make sure when the Test HV button is pressed, the correct QLineEdit is enabled and the other buttons are disabled.
+######## Make sure when enter is pressed, the QLineEdit is disabled, the buttons are enabled and the focus goes to the next button.
 
 3) Get the actual pictures showing voltmeter setup for each test into the assets folder.
 

@@ -39,9 +39,20 @@ class HVPSTestWindow(QMainWindow):
         self.test_voltages: tuple[str, ...] = ('100', '500', '1000')  # volts
         self.test_currents: tuple[str, ...] = ('0.3', '1.2', '2.5')  # amps
 
-        # Make empty lists to hold measurement and readback data
-        self.channel_readbacks: list[str] = []
-        self.channel_measurements: list[str] = []
+        # Make empty list to hold the gui creation function list.
+        self.test_stages: list[Callable] = []
+
+        # Make lists to hold measurement and readback data
+        self.channel_readbacks: list[str]
+        self.channel_measurements: list[str]
+
+        # Initialize the lists with the proper length
+        if self.occupied_channels == ['SL']:
+            self.channel_readbacks = ['unmeasured'] * 3
+            self.channel_measurements = ['unmeasured'] * 3
+        else:
+            self.channel_readbacks = ['unmeasured'] * 6
+            self.channel_measurements = ['unmeasured'] * 6
 
         # Make pre-populated dictionaries to hold the readback and measurement data
         self.readbacks: dict[str, list[str]] = {
@@ -258,7 +269,6 @@ class HVPSTestWindow(QMainWindow):
         Initializes the current_stage_index to zero.
         Calls the load_current_stage method.
         """
-        self.test_stages: list[Callable] = []
         if 'BM' in self.occupied_channels:
             self.test_stages.append(self.create_beam_test_gui)
         if 'EX' in self.occupied_channels:
@@ -324,20 +334,28 @@ class HVPSTestWindow(QMainWindow):
         instructions_txt = QLabel(instructions)
 
         # Create the three postive and three negative HV test buttons
-        test_pos_100V_btn = QPushButton('Test 100 V')
-        test_pos_500V_btn = QPushButton('Test 500 V')
-        test_pos_1kV_btn = QPushButton('Test 1000 V')
-        test_neg_100V_btn = QPushButton('Test -100 V')
-        test_neg_500V_btn = QPushButton('Test -500 V')
-        test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.test_pos_100V_btn = QPushButton('Test 100 V')
+        self.test_pos_500V_btn = QPushButton('Test 500 V')
+        self.test_pos_1kV_btn = QPushButton('Test 1000 V')
+        self.test_neg_100V_btn = QPushButton('Test -100 V')
+        self.test_neg_500V_btn = QPushButton('Test -500 V')
+        self.test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.hv_buttons = [
+            self.test_pos_100V_btn,
+            self.test_pos_500V_btn,
+            self.test_pos_1kV_btn,
+            self.test_neg_100V_btn,
+            self.test_neg_500V_btn,
+            self.test_neg_1kV_btn,
+        ]
 
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
-        test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
-        test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
-        test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
-        test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
-        test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
-        test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
+        self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
+        self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
+        self.test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
+        self.test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
+        self.test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
+        self.test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
 
         # Create the entry boxes for recording the measured voltage values
         self.beam_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
@@ -346,6 +364,14 @@ class HVPSTestWindow(QMainWindow):
         self.beam_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.beam_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.beam_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
+
+        # Set the QLine edits to be disabled
+        self.beam_pos_100V_measurement.setEnabled(False)
+        self.beam_pos_500V_measurement.setEnabled(False)
+        self.beam_pos_1kV_measurement.setEnabled(False)
+        self.beam_neg_100V_measurement.setEnabled(False)
+        self.beam_neg_500V_measurement.setEnabled(False)
+        self.beam_neg_1kV_measurement.setEnabled(False)
 
         # Set the validators
         # self.beam_pos_100V_measurement.setValidator(self.lv_validator)
@@ -377,11 +403,11 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV`` and `Next`` buttons
         disable_hv_btn = QPushButton('Disable HV')
-        next_btn = QPushButton('Next')
+        self.next_btn = QPushButton('Next')
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
-        next_btn.clicked.connect(self.handle_next_btn)
+        self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
         vertical_line = QFrame(frameShape=QFrame.Shape.VLine)
@@ -396,12 +422,12 @@ class HVPSTestWindow(QMainWindow):
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
         )
         self.main_layout.addWidget(instructions_txt, 1, 0, 1, 2)
-        self.main_layout.addWidget(test_pos_100V_btn, 2, 0)
-        self.main_layout.addWidget(test_pos_500V_btn, 3, 0)
-        self.main_layout.addWidget(test_pos_1kV_btn, 4, 0)
-        self.main_layout.addWidget(test_neg_100V_btn, 5, 0)
-        self.main_layout.addWidget(test_neg_500V_btn, 6, 0)
-        self.main_layout.addWidget(test_neg_1kV_btn, 7, 0)
+        self.main_layout.addWidget(self.test_pos_100V_btn, 2, 0)
+        self.main_layout.addWidget(self.test_pos_500V_btn, 3, 0)
+        self.main_layout.addWidget(self.test_pos_1kV_btn, 4, 0)
+        self.main_layout.addWidget(self.test_neg_100V_btn, 5, 0)
+        self.main_layout.addWidget(self.test_neg_500V_btn, 6, 0)
+        self.main_layout.addWidget(self.test_neg_1kV_btn, 7, 0)
         self.main_layout.addWidget(self.beam_pos_100V_measurement, 2, 1)
         self.main_layout.addWidget(self.beam_pos_500V_measurement, 3, 1)
         self.main_layout.addWidget(self.beam_pos_1kV_measurement, 4, 1)
@@ -409,7 +435,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.beam_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.beam_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(next_btn, 9, 0, 1, 2)
+        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -445,20 +471,28 @@ class HVPSTestWindow(QMainWindow):
         instructions_txt = QLabel(instructions)
 
         # Create the three postive and three negative HV test buttons
-        test_pos_100V_btn = QPushButton('Test 100 V')
-        test_pos_500V_btn = QPushButton('Test 500 V')
-        test_pos_1kV_btn = QPushButton('Test 1000 V')
-        test_neg_100V_btn = QPushButton('Test -100 V')
-        test_neg_500V_btn = QPushButton('Test -500 V')
-        test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.test_pos_100V_btn = QPushButton('Test 100 V')
+        self.test_pos_500V_btn = QPushButton('Test 500 V')
+        self.test_pos_1kV_btn = QPushButton('Test 1000 V')
+        self.test_neg_100V_btn = QPushButton('Test -100 V')
+        self.test_neg_500V_btn = QPushButton('Test -500 V')
+        self.test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.hv_buttons = [
+            self.test_pos_100V_btn,
+            self.test_pos_500V_btn,
+            self.test_pos_1kV_btn,
+            self.test_neg_100V_btn,
+            self.test_neg_500V_btn,
+            self.test_neg_1kV_btn,
+        ]
 
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
-        test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
-        test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
-        test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
-        test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
-        test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
-        test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
+        self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
+        self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
+        self.test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
+        self.test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
+        self.test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
+        self.test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
 
         # Create the entry boxes for recording the measured voltage values
         self.ext_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
@@ -498,11 +532,11 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
-        next_btn = QPushButton('Next')
+        self.next_btn = QPushButton('Next')
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
-        next_btn.clicked.connect(self.handle_next_btn)
+        self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
         vertical_line = QFrame(frameShape=QFrame.Shape.VLine)
@@ -517,12 +551,12 @@ class HVPSTestWindow(QMainWindow):
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
         )
         self.main_layout.addWidget(instructions_txt, 1, 0, 1, 2)
-        self.main_layout.addWidget(test_pos_100V_btn, 2, 0)
-        self.main_layout.addWidget(test_pos_500V_btn, 3, 0)
-        self.main_layout.addWidget(test_pos_1kV_btn, 4, 0)
-        self.main_layout.addWidget(test_neg_100V_btn, 5, 0)
-        self.main_layout.addWidget(test_neg_500V_btn, 6, 0)
-        self.main_layout.addWidget(test_neg_1kV_btn, 7, 0)
+        self.main_layout.addWidget(self.test_pos_100V_btn, 2, 0)
+        self.main_layout.addWidget(self.test_pos_500V_btn, 3, 0)
+        self.main_layout.addWidget(self.test_pos_1kV_btn, 4, 0)
+        self.main_layout.addWidget(self.test_neg_100V_btn, 5, 0)
+        self.main_layout.addWidget(self.test_neg_500V_btn, 6, 0)
+        self.main_layout.addWidget(self.test_neg_1kV_btn, 7, 0)
         self.main_layout.addWidget(self.ext_pos_100V_measurement, 2, 1)
         self.main_layout.addWidget(self.ext_pos_500V_measurement, 3, 1)
         self.main_layout.addWidget(self.ext_pos_1kV_measurement, 4, 1)
@@ -530,7 +564,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.ext_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.ext_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(next_btn, 9, 0, 1, 2)
+        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -566,20 +600,28 @@ class HVPSTestWindow(QMainWindow):
         instructions_txt = QLabel(instructions)
 
         # Create the three postive and three negative HV test buttons
-        test_pos_100V_btn = QPushButton('Test 100 V')
-        test_pos_500V_btn = QPushButton('Test 500 V')
-        test_pos_1kV_btn = QPushButton('Test 1000 V')
-        test_neg_100V_btn = QPushButton('Test -100 V')
-        test_neg_500V_btn = QPushButton('Test -500 V')
-        test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.test_pos_100V_btn = QPushButton('Test 100 V')
+        self.test_pos_500V_btn = QPushButton('Test 500 V')
+        self.test_pos_1kV_btn = QPushButton('Test 1000 V')
+        self.test_neg_100V_btn = QPushButton('Test -100 V')
+        self.test_neg_500V_btn = QPushButton('Test -500 V')
+        self.test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.hv_buttons = [
+            self.test_pos_100V_btn,
+            self.test_pos_500V_btn,
+            self.test_pos_1kV_btn,
+            self.test_neg_100V_btn,
+            self.test_neg_500V_btn,
+            self.test_neg_1kV_btn,
+        ]
 
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
-        test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
-        test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
-        test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
-        test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
-        test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
-        test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
+        self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
+        self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
+        self.test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
+        self.test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
+        self.test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
+        self.test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
 
         # Create the entry boxes for recording the measured voltage values
         self.L1_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
@@ -619,11 +661,11 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV`` and `Next`` buttons
         disable_hv_btn = QPushButton('Disable HV')
-        next_btn = QPushButton('Next')
+        self.next_btn = QPushButton('Next')
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
-        next_btn.clicked.connect(self.handle_next_btn)
+        self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
         vertical_line = QFrame(frameShape=QFrame.Shape.VLine)
@@ -638,12 +680,12 @@ class HVPSTestWindow(QMainWindow):
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
         )
         self.main_layout.addWidget(instructions_txt, 1, 0, 1, 2)
-        self.main_layout.addWidget(test_pos_100V_btn, 2, 0)
-        self.main_layout.addWidget(test_pos_500V_btn, 3, 0)
-        self.main_layout.addWidget(test_pos_1kV_btn, 4, 0)
-        self.main_layout.addWidget(test_neg_100V_btn, 5, 0)
-        self.main_layout.addWidget(test_neg_500V_btn, 6, 0)
-        self.main_layout.addWidget(test_neg_1kV_btn, 7, 0)
+        self.main_layout.addWidget(self.test_pos_100V_btn, 2, 0)
+        self.main_layout.addWidget(self.test_pos_500V_btn, 3, 0)
+        self.main_layout.addWidget(self.test_pos_1kV_btn, 4, 0)
+        self.main_layout.addWidget(self.test_neg_100V_btn, 5, 0)
+        self.main_layout.addWidget(self.test_neg_500V_btn, 6, 0)
+        self.main_layout.addWidget(self.test_neg_1kV_btn, 7, 0)
         self.main_layout.addWidget(self.L1_pos_100V_measurement, 2, 1)
         self.main_layout.addWidget(self.L1_pos_500V_measurement, 3, 1)
         self.main_layout.addWidget(self.L1_pos_1kV_measurement, 4, 1)
@@ -651,7 +693,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L1_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.L1_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(next_btn, 9, 0, 1, 2)
+        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -687,20 +729,28 @@ class HVPSTestWindow(QMainWindow):
         instructions_txt = QLabel(instructions)
 
         # Create the three postive and three negative HV test buttons
-        test_pos_100V_btn = QPushButton('Test 100 V')
-        test_pos_500V_btn = QPushButton('Test 500 V')
-        test_pos_1kV_btn = QPushButton('Test 1000 V')
-        test_neg_100V_btn = QPushButton('Test -100 V')
-        test_neg_500V_btn = QPushButton('Test -500 V')
-        test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.test_pos_100V_btn = QPushButton('Test 100 V')
+        self.test_pos_500V_btn = QPushButton('Test 500 V')
+        self.test_pos_1kV_btn = QPushButton('Test 1000 V')
+        self.test_neg_100V_btn = QPushButton('Test -100 V')
+        self.test_neg_500V_btn = QPushButton('Test -500 V')
+        self.test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.hv_buttons = [
+            self.test_pos_100V_btn,
+            self.test_pos_500V_btn,
+            self.test_pos_1kV_btn,
+            self.test_neg_100V_btn,
+            self.test_neg_500V_btn,
+            self.test_neg_1kV_btn,
+        ]
 
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
-        test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
-        test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
-        test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
-        test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
-        test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
-        test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
+        self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
+        self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
+        self.test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
+        self.test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
+        self.test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
+        self.test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
 
         # Create the entry boxes for recording the measured voltage values
         self.L2_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
@@ -740,11 +790,11 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV`` and `Next`` buttons
         disable_hv_btn = QPushButton('Disable HV')
-        next_btn = QPushButton('Next')
+        self.next_btn = QPushButton('Next')
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
-        next_btn.clicked.connect(self.handle_next_btn)
+        self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
         vertical_line = QFrame(frameShape=QFrame.Shape.VLine)
@@ -759,12 +809,12 @@ class HVPSTestWindow(QMainWindow):
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
         )
         self.main_layout.addWidget(instructions_txt, 1, 0, 1, 2)
-        self.main_layout.addWidget(test_pos_100V_btn, 2, 0)
-        self.main_layout.addWidget(test_pos_500V_btn, 3, 0)
-        self.main_layout.addWidget(test_pos_1kV_btn, 4, 0)
-        self.main_layout.addWidget(test_neg_100V_btn, 5, 0)
-        self.main_layout.addWidget(test_neg_500V_btn, 6, 0)
-        self.main_layout.addWidget(test_neg_1kV_btn, 7, 0)
+        self.main_layout.addWidget(self.test_pos_100V_btn, 2, 0)
+        self.main_layout.addWidget(self.test_pos_500V_btn, 3, 0)
+        self.main_layout.addWidget(self.test_pos_1kV_btn, 4, 0)
+        self.main_layout.addWidget(self.test_neg_100V_btn, 5, 0)
+        self.main_layout.addWidget(self.test_neg_500V_btn, 6, 0)
+        self.main_layout.addWidget(self.test_neg_1kV_btn, 7, 0)
         self.main_layout.addWidget(self.L2_pos_100V_measurement, 2, 1)
         self.main_layout.addWidget(self.L2_pos_500V_measurement, 3, 1)
         self.main_layout.addWidget(self.L2_pos_1kV_measurement, 4, 1)
@@ -772,7 +822,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L2_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.L2_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(next_btn, 9, 0, 1, 2)
+        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -808,20 +858,28 @@ class HVPSTestWindow(QMainWindow):
         instructions_txt = QLabel(instructions)
 
         # Create the three postive and three negative HV test buttons
-        test_pos_100V_btn = QPushButton('Test 100 V')
-        test_pos_500V_btn = QPushButton('Test 500 V')
-        test_pos_1kV_btn = QPushButton('Test 1000 V')
-        test_neg_100V_btn = QPushButton('Test -100 V')
-        test_neg_500V_btn = QPushButton('Test -500 V')
-        test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.test_pos_100V_btn = QPushButton('Test 100 V')
+        self.test_pos_500V_btn = QPushButton('Test 500 V')
+        self.test_pos_1kV_btn = QPushButton('Test 1000 V')
+        self.test_neg_100V_btn = QPushButton('Test -100 V')
+        self.test_neg_500V_btn = QPushButton('Test -500 V')
+        self.test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.hv_buttons = [
+            self.test_pos_100V_btn,
+            self.test_pos_500V_btn,
+            self.test_pos_1kV_btn,
+            self.test_neg_100V_btn,
+            self.test_neg_500V_btn,
+            self.test_neg_1kV_btn,
+        ]
 
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
-        test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
-        test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
-        test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
-        test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
-        test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
-        test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
+        self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
+        self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
+        self.test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
+        self.test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
+        self.test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
+        self.test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
 
         # Create the entry boxes for recording the measured voltage values
         self.L3_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
@@ -861,11 +919,11 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV`` and `Next`` buttons
         disable_hv_btn = QPushButton('Disable HV')
-        next_btn = QPushButton('Next')
+        self.next_btn = QPushButton('Next')
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
-        next_btn.clicked.connect(self.handle_next_btn)
+        self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
         vertical_line = QFrame(frameShape=QFrame.Shape.VLine)
@@ -880,12 +938,12 @@ class HVPSTestWindow(QMainWindow):
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
         )
         self.main_layout.addWidget(instructions_txt, 1, 0, 1, 2)
-        self.main_layout.addWidget(test_pos_100V_btn, 2, 0)
-        self.main_layout.addWidget(test_pos_500V_btn, 3, 0)
-        self.main_layout.addWidget(test_pos_1kV_btn, 4, 0)
-        self.main_layout.addWidget(test_neg_100V_btn, 5, 0)
-        self.main_layout.addWidget(test_neg_500V_btn, 6, 0)
-        self.main_layout.addWidget(test_neg_1kV_btn, 7, 0)
+        self.main_layout.addWidget(self.test_pos_100V_btn, 2, 0)
+        self.main_layout.addWidget(self.test_pos_500V_btn, 3, 0)
+        self.main_layout.addWidget(self.test_pos_1kV_btn, 4, 0)
+        self.main_layout.addWidget(self.test_neg_100V_btn, 5, 0)
+        self.main_layout.addWidget(self.test_neg_500V_btn, 6, 0)
+        self.main_layout.addWidget(self.test_neg_1kV_btn, 7, 0)
         self.main_layout.addWidget(self.L3_pos_100V_measurement, 2, 1)
         self.main_layout.addWidget(self.L3_pos_500V_measurement, 3, 1)
         self.main_layout.addWidget(self.L3_pos_1kV_measurement, 4, 1)
@@ -893,7 +951,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L3_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.L3_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(next_btn, 9, 0, 1, 2)
+        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -929,20 +987,28 @@ class HVPSTestWindow(QMainWindow):
         instructions_txt = QLabel(instructions)
 
         # Create the three postive and three negative HV test buttons
-        test_pos_100V_btn = QPushButton('Test 100 V')
-        test_pos_500V_btn = QPushButton('Test 500 V')
-        test_pos_1kV_btn = QPushButton('Test 1000 V')
-        test_neg_100V_btn = QPushButton('Test -100 V')
-        test_neg_500V_btn = QPushButton('Test -500 V')
-        test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.test_pos_100V_btn = QPushButton('Test 100 V')
+        self.test_pos_500V_btn = QPushButton('Test 500 V')
+        self.test_pos_1kV_btn = QPushButton('Test 1000 V')
+        self.test_neg_100V_btn = QPushButton('Test -100 V')
+        self.test_neg_500V_btn = QPushButton('Test -500 V')
+        self.test_neg_1kV_btn = QPushButton('Test -1000 V')
+        self.hv_buttons = [
+            self.test_pos_100V_btn,
+            self.test_pos_500V_btn,
+            self.test_pos_1kV_btn,
+            self.test_neg_100V_btn,
+            self.test_neg_500V_btn,
+            self.test_neg_1kV_btn,
+        ]
 
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
-        test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
-        test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
-        test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
-        test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
-        test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
-        test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
+        self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
+        self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
+        self.test_pos_1kV_btn.clicked.connect(self.handle_test_pos_1kV_btn)
+        self.test_neg_100V_btn.clicked.connect(self.handle_test_neg_100V_btn)
+        self.test_neg_500V_btn.clicked.connect(self.handle_test_neg_500V_btn)
+        self.test_neg_1kV_btn.clicked.connect(self.handle_test_neg_1kV_btn)
 
         # Create the entry boxes for recording the measured voltage values
         self.L4_pos_100V_measurement = QLineEdit(placeholderText='Enter measurement')
@@ -982,11 +1048,11 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV`` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
-        next_btn = QPushButton('Next')
+        self.next_btn = QPushButton('Next')
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
-        next_btn.clicked.connect(self.handle_next_btn)
+        self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
         vertical_line = QFrame(frameShape=QFrame.Shape.VLine)
@@ -1001,12 +1067,12 @@ class HVPSTestWindow(QMainWindow):
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
         )
         self.main_layout.addWidget(instructions_txt, 1, 0, 1, 2)
-        self.main_layout.addWidget(test_pos_100V_btn, 2, 0)
-        self.main_layout.addWidget(test_pos_500V_btn, 3, 0)
-        self.main_layout.addWidget(test_pos_1kV_btn, 4, 0)
-        self.main_layout.addWidget(test_neg_100V_btn, 5, 0)
-        self.main_layout.addWidget(test_neg_500V_btn, 6, 0)
-        self.main_layout.addWidget(test_neg_1kV_btn, 7, 0)
+        self.main_layout.addWidget(self.test_pos_100V_btn, 2, 0)
+        self.main_layout.addWidget(self.test_pos_500V_btn, 3, 0)
+        self.main_layout.addWidget(self.test_pos_1kV_btn, 4, 0)
+        self.main_layout.addWidget(self.test_neg_100V_btn, 5, 0)
+        self.main_layout.addWidget(self.test_neg_500V_btn, 6, 0)
+        self.main_layout.addWidget(self.test_neg_1kV_btn, 7, 0)
         self.main_layout.addWidget(self.L4_pos_100V_measurement, 2, 1)
         self.main_layout.addWidget(self.L4_pos_500V_measurement, 3, 1)
         self.main_layout.addWidget(self.L4_pos_1kV_measurement, 4, 1)
@@ -1014,7 +1080,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L4_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.L4_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(next_btn, 9, 0, 1, 2)
+        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -1057,13 +1123,18 @@ class HVPSTestWindow(QMainWindow):
         instructions_txt = QLabel(instructions)
 
         # Create the three current test buttons
-        current1_btn = QPushButton('Test 0.3 A')
-        current2_btn = QPushButton('Test 1.2 A')
-        current3_btn = QPushButton('Test 2.5 A')
+        self.current1_btn = QPushButton('Test 0.3 A')
+        self.current2_btn = QPushButton('Test 1.2 A')
+        self.current3_btn = QPushButton('Test 2.5 A')
+        self.current_buttons: list[QPushButton] = [
+            self.current1_btn,
+            self.current2_btn,
+            self.current3_btn,
+        ]
 
-        current1_btn.clicked.connect(self.handle_test_sol_current1_btn)
-        current2_btn.clicked.connect(self.handle_test_sol_current2_btn)
-        current3_btn.clicked.connect(self.handle_test_sol_current3_btn)
+        self.current1_btn.clicked.connect(self.handle_test_sol_current1_btn)
+        self.current2_btn.clicked.connect(self.handle_test_sol_current2_btn)
+        self.current3_btn.clicked.connect(self.handle_test_sol_current3_btn)
 
         # Create the entry boxes for recording the measured current values
         self.current1_measurement = QLineEdit(placeholderText='Enter measurement')
@@ -1102,9 +1173,9 @@ class HVPSTestWindow(QMainWindow):
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
         )
         self.main_layout.addWidget(instructions_txt, 1, 0, 1, 2)
-        self.main_layout.addWidget(current1_btn, 2, 0)
-        self.main_layout.addWidget(current2_btn, 3, 0)
-        self.main_layout.addWidget(current3_btn, 4, 0)
+        self.main_layout.addWidget(self.current1_btn, 2, 0)
+        self.main_layout.addWidget(self.current2_btn, 3, 0)
+        self.main_layout.addWidget(self.current3_btn, 4, 0)
         self.main_layout.addWidget(self.current1_measurement, 2, 1)
         self.main_layout.addWidget(self.current2_measurement, 3, 1)
         self.main_layout.addWidget(self.current3_measurement, 4, 1)
@@ -1159,8 +1230,14 @@ class HVPSTestWindow(QMainWindow):
 
         self.measurements[self.channel] = self.channel_measurements
         self.readbacks[self.channel] = self.channel_readbacks
-        self.channel_measurements = []
-        self.channel_readbacks = []
+
+        if self.channel != 'SL':
+            self.channel_measurements = ['unmeasured'] * 6
+            self.channel_readbacks = ['unmeasured'] * 6
+        else:
+            self.channel_measurements = ['unmeasured'] * 3
+            self.channel_readbacks = ['unmeasured'] * 3
+
         self.current_stage_index += 1
         self.load_current_stage()
 
@@ -1169,6 +1246,29 @@ class HVPSTestWindow(QMainWindow):
         """
         Tests the selected channel at 100 V
         """
+        # Enable the QLineEdit
+        match self.channel:
+            case 'BM':
+                self.beam_pos_100V_measurement.setEnabled(True)
+            case 'EX':
+                self.ext_pos_100V_measurement.setEnabled(True)
+            case 'L1':
+                self.L1_pos_100V_measurement.setEnabled(True)
+            case 'L2':
+                self.L2_pos_100V_measurement.setEnabled(True)
+            case 'L3':
+                self.L3_pos_100V_measurement.setEnabled(True)
+            case 'L4':
+                self.L4_pos_100V_measurement.setEnabled(True)
+
+        # Disable the other buttons
+        for button in self.hv_buttons:
+            if button == self.test_pos_100V_btn:
+                continue
+            else:
+                button.setEnabled(False)
+
+        # Enable and set the voltage
         voltage: str = self.test_voltages[0]  # '100'
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
@@ -1179,6 +1279,29 @@ class HVPSTestWindow(QMainWindow):
         """
         Tests the selected channel at 500 V
         """
+        # Enable the QLineEdit
+        match self.channel:
+            case 'BM':
+                self.beam_pos_500V_measurement.setEnabled(True)
+            case 'EX':
+                self.ext_pos_500V_measurement.setEnabled(True)
+            case 'L1':
+                self.L1_pos_500V_measurement.setEnabled(True)
+            case 'L2':
+                self.L2_pos_500V_measurement.setEnabled(True)
+            case 'L3':
+                self.L3_pos_500V_measurement.setEnabled(True)
+            case 'L4':
+                self.L4_pos_500V_measurement.setEnabled(True)
+
+        # Disable the other buttons
+        for button in self.hv_buttons:
+            if button == self.test_pos_500V_btn:
+                continue
+            else:
+                button.setEnabled(False)
+
+        # Enable and set the voltage
         voltage: str = self.test_voltages[1]  # '500'
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
@@ -1189,6 +1312,29 @@ class HVPSTestWindow(QMainWindow):
         """
         Tests the selected channel at 1000 V
         """
+        # Enable the QLineEdit
+        match self.channel:
+            case 'BM':
+                self.beam_pos_1kV_measurement.setEnabled(True)
+            case 'EX':
+                self.ext_pos_1kV_measurement.setEnabled(True)
+            case 'L1':
+                self.L1_pos_1kV_measurement.setEnabled(True)
+            case 'L2':
+                self.L2_pos_1kV_measurement.setEnabled(True)
+            case 'L3':
+                self.L3_pos_1kV_measurement.setEnabled(True)
+            case 'L4':
+                self.L4_pos_1kV_measurement.setEnabled(True)
+
+        # Disable the other buttons
+        for button in self.hv_buttons:
+            if button == self.test_pos_1kV_btn:
+                continue
+            else:
+                button.setEnabled(False)
+
+        # Enable and set the voltage
         voltage: str = self.test_voltages[2]  # '1000'
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
@@ -1199,6 +1345,29 @@ class HVPSTestWindow(QMainWindow):
         """
         Tests the selected channel at -100 V
         """
+        # Enable the QLineEdit
+        match self.channel:
+            case 'BM':
+                self.beam_neg_100V_measurement.setEnabled(True)
+            case 'EX':
+                self.ext_neg_100V_measurement.setEnabled(True)
+            case 'L1':
+                self.L1_neg_100V_measurement.setEnabled(True)
+            case 'L2':
+                self.L2_neg_100V_measurement.setEnabled(True)
+            case 'L3':
+                self.L3_neg_100V_measurement.setEnabled(True)
+            case 'L4':
+                self.L4_neg_100V_measurement.setEnabled(True)
+
+        # Disable the other buttons
+        for button in self.hv_buttons:
+            if button == self.test_neg_100V_btn:
+                continue
+            else:
+                button.setEnabled(False)
+
+        # Enable and set the voltage
         voltage: str = f'-{self.test_voltages[0]}'  # '-100'
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
@@ -1209,6 +1378,29 @@ class HVPSTestWindow(QMainWindow):
         """
         Tests the selected channel at -500 V
         """
+        # Enable the QLineEdit
+        match self.channel:
+            case 'BM':
+                self.beam_neg_500V_measurement.setEnabled(True)
+            case 'EX':
+                self.ext_neg_500V_measurement.setEnabled(True)
+            case 'L1':
+                self.L1_neg_500V_measurement.setEnabled(True)
+            case 'L2':
+                self.L2_neg_500V_measurement.setEnabled(True)
+            case 'L3':
+                self.L3_neg_500V_measurement.setEnabled(True)
+            case 'L4':
+                self.L4_neg_500V_measurement.setEnabled(True)
+
+        # Disable the other buttons
+        for button in self.hv_buttons:
+            if button == self.test_neg_500V_btn:
+                continue
+            else:
+                button.setEnabled(False)
+
+        # Enable and set the voltage
         voltage: str = f'-{self.test_voltages[1]}'  # '-500'
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
@@ -1219,6 +1411,29 @@ class HVPSTestWindow(QMainWindow):
         """
         Tests the selected channel at -1000 V
         """
+        # Enable the QLineEdit
+        match self.channel:
+            case 'BM':
+                self.beam_neg_1kV_measurement.setEnabled(True)
+            case 'EX':
+                self.ext_neg_1kV_measurement.setEnabled(True)
+            case 'L1':
+                self.L1_neg_1kV_measurement.setEnabled(True)
+            case 'L2':
+                self.L2_neg_1kV_measurement.setEnabled(True)
+            case 'L3':
+                self.L3_neg_1kV_measurement.setEnabled(True)
+            case 'L4':
+                self.L4_neg_1kV_measurement.setEnabled(True)
+
+        # Disable the other buttons
+        for button in self.hv_buttons:
+            if button == self.test_neg_1kV_btn:
+                continue
+            else:
+                button.setEnabled(False)
+
+        # Enable and set the voltage
         voltage: str = f'-{self.test_voltages[2]}'  # '-1000'
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
@@ -1230,6 +1445,7 @@ class HVPSTestWindow(QMainWindow):
         """
         Tests the solenoid at 0.3 A
         """
+        self.current1_measurement.setEnabled(True)
         current: str = self.test_currents[0]  # '0.3'
         sol_enabled: bool = self.get_sol_enable_state()
         if not sol_enabled:
@@ -1240,6 +1456,7 @@ class HVPSTestWindow(QMainWindow):
         """
         Tests the solenoid at 1.2 A
         """
+        self.current2_measurement.setEnabled(True)
         current: str = self.test_currents[1]  # '1.2'
         sol_enabled: bool = self.get_sol_enable_state()
         if not sol_enabled:
@@ -1250,6 +1467,7 @@ class HVPSTestWindow(QMainWindow):
         """
         Tests the solenoid at 2.5 A
         """
+        self.current3_measurement.setEnabled(True)
         current: str = self.test_currents[2]  # '2.5'
         sol_enabled: bool = self.get_sol_enable_state()
         if not sol_enabled:
@@ -1260,398 +1478,507 @@ class HVPSTestWindow(QMainWindow):
     def handle_beam_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_pos_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[0] = readback
+        self.channel_measurements[0] = measurement
         self.beam_pos_100V_measurement.setEnabled(False)
         self.beam_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_pos_500V_btn.setFocus()
 
     def handle_beam_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_pos_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[1] = readback
+        self.channel_measurements[1] = measurement
         self.beam_pos_500V_measurement.setEnabled(False)
         self.beam_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_pos_1kV_btn.setFocus()
 
     def handle_beam_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_pos_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[2] = readback
+        self.channel_measurements[2] = measurement
         self.beam_pos_1kV_measurement.setEnabled(False)
         self.beam_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_100V_btn.setFocus()
 
     def handle_beam_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_neg_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[3] = readback
+        self.channel_measurements[3] = measurement
         self.beam_neg_100V_measurement.setEnabled(False)
         self.beam_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_500V_btn.setFocus()
 
     def handle_beam_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_neg_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[4] = readback
+        self.channel_measurements[4] = measurement
         self.beam_neg_500V_measurement.setEnabled(False)
         self.beam_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_1kV_btn.setFocus()
 
     def handle_beam_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_neg_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[5] = readback
+        self.channel_measurements[5] = measurement
         self.beam_neg_1kV_measurement.setEnabled(False)
         self.beam_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        self.next_btn.setFocus()
 
     # Create the Extractor pressReturn event handlers
     def handle_ext_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_pos_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[0] = readback
+        self.channel_measurements[0] = measurement
         self.ext_pos_100V_measurement.setEnabled(False)
         self.ext_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_pos_500V_btn.setFocus()
 
     def handle_ext_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_pos_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[1] = readback
+        self.channel_measurements[1] = measurement
         self.ext_pos_500V_measurement.setEnabled(False)
         self.ext_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_pos_1kV_btn.setFocus()
 
     def handle_ext_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_pos_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[2] = readback
+        self.channel_measurements[2] = measurement
         self.ext_pos_1kV_measurement.setEnabled(False)
         self.ext_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_100V_btn.setFocus()
 
     def handle_ext_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_neg_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[3] = readback
+        self.channel_measurements[3] = measurement
         self.ext_neg_100V_measurement.setEnabled(False)
         self.ext_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_500V_btn.setFocus()
 
     def handle_ext_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_neg_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[4] = readback
+        self.channel_measurements[4] = measurement
         self.ext_neg_500V_measurement.setEnabled(False)
         self.ext_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_1kV_btn.setFocus()
 
     def handle_ext_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_neg_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[5] = readback
+        self.channel_measurements[5] = measurement
         self.ext_neg_1kV_measurement.setEnabled(False)
         self.ext_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.next_btn.setFocus()
 
     # Create the L1 pressReturn event handler
     def handle_L1_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_pos_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[0] = readback
+        self.channel_measurements[0] = measurement
         self.L1_pos_100V_measurement.setEnabled(False)
         self.L1_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
 
     def handle_L1_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_pos_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[1] = readback
+        self.channel_measurements[1] = measurement
         self.L1_pos_500V_measurement.setEnabled(False)
         self.L1_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
 
     def handle_L1_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_pos_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[2] = readback
+        self.channel_measurements[2] = measurement
         self.L1_pos_1kV_measurement.setEnabled(False)
         self.L1_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
 
     def handle_L1_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_neg_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[3] = readback
+        self.channel_measurements[3] = measurement
         self.L1_neg_100V_measurement.setEnabled(False)
         self.L1_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
 
     def handle_L1_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_neg_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[4] = readback
+        self.channel_measurements[4] = measurement
         self.L1_neg_500V_measurement.setEnabled(False)
         self.L1_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
 
     def handle_L1_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_neg_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[5] = readback
+        self.channel_measurements[5] = measurement
         self.L1_neg_1kV_measurement.setEnabled(False)
         self.L1_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
 
     # Create the L2 pressReturn event handler
     def handle_L2_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_pos_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[0] = readback
+        self.channel_measurements[0] = measurement
         self.L2_pos_100V_measurement.setEnabled(False)
         self.L2_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_pos_500V_btn.setFocus()
 
     def handle_L2_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_pos_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[1] = readback
+        self.channel_measurements[1] = measurement
         self.L2_pos_500V_measurement.setEnabled(False)
         self.L2_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_pos_1kV_btn.setFocus()
 
     def handle_L2_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_pos_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[2] = readback
+        self.channel_measurements[2] = measurement
         self.L2_pos_1kV_measurement.setEnabled(False)
         self.L2_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_100V_btn.setFocus()
 
     def handle_L2_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_neg_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[3] = readback
+        self.channel_measurements[3] = measurement
         self.L2_neg_100V_measurement.setEnabled(False)
         self.L2_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_500V_btn.setFocus()
 
     def handle_L2_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_neg_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[4] = readback
+        self.channel_measurements[4] = measurement
         self.L2_neg_500V_measurement.setEnabled(False)
         self.L2_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_1kV_btn.setFocus()
 
     def handle_L2_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_neg_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[5] = readback
+        self.channel_measurements[5] = measurement
         self.L2_neg_1kV_measurement.setEnabled(False)
         self.L2_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.next_btn.setFocus()
 
     # Create the L3 pressReturn event handler
     def handle_L3_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_pos_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[0] = readback
+        self.channel_measurements[0] = measurement
         self.L3_pos_100V_measurement.setEnabled(False)
         self.L3_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_pos_500V_btn.setFocus()
 
     def handle_L3_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_pos_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[1] = readback
+        self.channel_measurements[1] = measurement
         self.L3_pos_500V_measurement.setEnabled(False)
         self.L3_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_pos_1kV_btn.setFocus()
 
     def handle_L3_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_pos_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[2] = readback
+        self.channel_measurements[2] = measurement
         self.L3_pos_1kV_measurement.setEnabled(False)
         self.L3_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_100V_btn.setFocus()
 
     def handle_L3_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_neg_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[3] = readback
+        self.channel_measurements[3] = measurement
         self.L3_neg_100V_measurement.setEnabled(False)
         self.L3_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_500V_btn.setFocus()
 
     def handle_L3_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_neg_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[4] = readback
+        self.channel_measurements[4] = measurement
         self.L3_neg_500V_measurement.setEnabled(False)
         self.L3_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_1kV_btn.setFocus()
 
     def handle_L3_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_neg_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[5] = readback
+        self.channel_measurements[5] = measurement
         self.L3_neg_1kV_measurement.setEnabled(False)
         self.L3_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.next_btn.setFocus()
 
     # Create the L4 pressReturn event handler
     def handle_L4_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_pos_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[0] = readback
+        self.channel_measurements[0] = measurement
         self.L4_pos_100V_measurement.setEnabled(False)
         self.L4_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_pos_500V_btn.setFocus()
 
     def handle_L4_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_pos_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[1] = readback
+        self.channel_measurements[1] = measurement
         self.L4_pos_500V_measurement.setEnabled(False)
         self.L4_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_pos_1kV_btn.setFocus()
 
     def handle_L4_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_pos_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[2] = readback
+        self.channel_measurements[2] = measurement
         self.L4_pos_1kV_measurement.setEnabled(False)
         self.L4_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_100V_btn.setFocus()
 
     def handle_L4_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_neg_100V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[3] = readback
+        self.channel_measurements[3] = measurement
         self.L4_neg_100V_measurement.setEnabled(False)
         self.L4_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_500V_btn.setFocus()
 
     def handle_L4_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_neg_500V_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[4] = readback
+        self.channel_measurements[4] = measurement
         self.L4_neg_500V_measurement.setEnabled(False)
         self.L4_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.test_neg_1kV_btn.setFocus()
 
     def handle_L4_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_neg_1kV_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[5] = readback
+        self.channel_measurements[5] = measurement
         self.L4_neg_1kV_measurement.setEnabled(False)
         self.L4_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
         self.hvps.disable_high_voltage()
+        for button in self.hv_buttons:
+            button.setEnabled(True)
+        self.next_btn.setFocus()
 
     # Create the Solenoid pressReturn event handler
     def handle_current1_entered(self) -> None:
         readback: str = self.hvps.get_current(self.channel)
         measurement: str = self.current1_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[0] = readback
+        self.channel_measurements[0] = measurement
         self.current1_measurement.setEnabled(False)
         self.current1_measurement.clearFocus()
         self.hvps.set_solenoid_current('0')
         self.hvps.disable_solenoid_current()
+        for button in self.current_buttons:
+            button.setEnabled(True)
+        self.current2_btn.setFocus()
 
     def handle_current2_entered(self) -> None:
         readback: str = self.hvps.get_current(self.channel)
         measurement: str = self.current2_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[1] = readback
+        self.channel_measurements[1] = measurement
         self.current2_measurement.setEnabled(False)
         self.current2_measurement.clearFocus()
         self.hvps.set_solenoid_current('0')
         self.hvps.disable_solenoid_current()
+        for button in self.current_buttons:
+            button.setEnabled(True)
+        self.current3_btn.setFocus()
 
     def handle_current3_entered(self) -> None:
         readback: str = self.hvps.get_current(self.channel)
         measurement: str = self.current3_measurement.text()
-        self.channel_readbacks.append(readback)
-        self.channel_measurements.append(measurement)
+        self.channel_readbacks[2] = readback
+        self.channel_measurements[2] = measurement
         self.current3_measurement.setEnabled(False)
         self.current3_measurement.clearFocus()
         self.hvps.set_solenoid_current('0')
         self.hvps.disable_solenoid_current()
+        for button in self.current_buttons:
+            button.setEnabled(True)
+        self.next_btn.setFocus()
 
     # DELETE IF THE SPECIFIC HANDLERS WORK
     # def handle_test_sol_btn(self, current: str) -> None:
