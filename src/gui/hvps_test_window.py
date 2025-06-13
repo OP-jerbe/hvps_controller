@@ -1250,16 +1250,22 @@ class HVPSTestWindow(QMainWindow):
         match self.channel:
             case 'BM':
                 self.beam_pos_100V_measurement.setEnabled(True)
+                self.beam_pos_100V_measurement.setFocus()
             case 'EX':
                 self.ext_pos_100V_measurement.setEnabled(True)
+                self.ext_pos_100V_measurement.setFocus()
             case 'L1':
                 self.L1_pos_100V_measurement.setEnabled(True)
+                self.L1_pos_100V_measurement.setFocus()
             case 'L2':
                 self.L2_pos_100V_measurement.setEnabled(True)
+                self.L2_pos_100V_measurement.setFocus()
             case 'L3':
                 self.L3_pos_100V_measurement.setEnabled(True)
+                self.L3_pos_100V_measurement.setFocus()
             case 'L4':
                 self.L4_pos_100V_measurement.setEnabled(True)
+                self.L4_pos_100V_measurement.setFocus()
 
         # Disable the other buttons
         for button in self.hv_buttons:
@@ -1283,16 +1289,22 @@ class HVPSTestWindow(QMainWindow):
         match self.channel:
             case 'BM':
                 self.beam_pos_500V_measurement.setEnabled(True)
+                self.beam_pos_500V_measurement.setFocus()
             case 'EX':
                 self.ext_pos_500V_measurement.setEnabled(True)
+                self.ext_pos_500V_measurement.setFocus()
             case 'L1':
                 self.L1_pos_500V_measurement.setEnabled(True)
+                self.L1_pos_500V_measurement.setFocus()
             case 'L2':
                 self.L2_pos_500V_measurement.setEnabled(True)
+                self.L2_pos_500V_measurement.setFocus()
             case 'L3':
                 self.L3_pos_500V_measurement.setEnabled(True)
+                self.L3_pos_500V_measurement.setFocus()
             case 'L4':
                 self.L4_pos_500V_measurement.setEnabled(True)
+                self.L4_pos_500V_measurement.setFocus()
 
         # Disable the other buttons
         for button in self.hv_buttons:
@@ -1316,16 +1328,22 @@ class HVPSTestWindow(QMainWindow):
         match self.channel:
             case 'BM':
                 self.beam_pos_1kV_measurement.setEnabled(True)
+                self.beam_pos_1kV_measurement.setFocus()
             case 'EX':
                 self.ext_pos_1kV_measurement.setEnabled(True)
+                self.ext_pos_1kV_measurement.setFocus()
             case 'L1':
                 self.L1_pos_1kV_measurement.setEnabled(True)
+                self.L1_pos_1kV_measurement.setFocus()
             case 'L2':
                 self.L2_pos_1kV_measurement.setEnabled(True)
+                self.L2_pos_1kV_measurement.setFocus()
             case 'L3':
                 self.L3_pos_1kV_measurement.setEnabled(True)
+                self.L3_pos_1kV_measurement.setFocus()
             case 'L4':
                 self.L4_pos_1kV_measurement.setEnabled(True)
+                self.L4_pos_1kV_measurement.setFocus()
 
         # Disable the other buttons
         for button in self.hv_buttons:
@@ -1349,16 +1367,22 @@ class HVPSTestWindow(QMainWindow):
         match self.channel:
             case 'BM':
                 self.beam_neg_100V_measurement.setEnabled(True)
+                self.beam_neg_100V_measurement.setFocus()
             case 'EX':
                 self.ext_neg_100V_measurement.setEnabled(True)
+                self.ext_neg_100V_measurement.setFocus()
             case 'L1':
                 self.L1_neg_100V_measurement.setEnabled(True)
+                self.L1_neg_100V_measurement.setFocus()
             case 'L2':
                 self.L2_neg_100V_measurement.setEnabled(True)
+                self.L2_neg_100V_measurement.setFocus()
             case 'L3':
                 self.L3_neg_100V_measurement.setEnabled(True)
+                self.L3_neg_100V_measurement.setFocus()
             case 'L4':
                 self.L4_neg_100V_measurement.setEnabled(True)
+                self.L4_neg_100V_measurement.setFocus()
 
         # Disable the other buttons
         for button in self.hv_buttons:
@@ -1382,16 +1406,22 @@ class HVPSTestWindow(QMainWindow):
         match self.channel:
             case 'BM':
                 self.beam_neg_500V_measurement.setEnabled(True)
+                self.beam_neg_500V_measurement.setFocus()
             case 'EX':
                 self.ext_neg_500V_measurement.setEnabled(True)
+                self.ext_neg_500V_measurement.setFocus()
             case 'L1':
                 self.L1_neg_500V_measurement.setEnabled(True)
+                self.L1_neg_500V_measurement.setFocus()
             case 'L2':
                 self.L2_neg_500V_measurement.setEnabled(True)
+                self.L2_neg_500V_measurement.setFocus()
             case 'L3':
                 self.L3_neg_500V_measurement.setEnabled(True)
+                self.L3_neg_500V_measurement.setFocus()
             case 'L4':
                 self.L4_neg_500V_measurement.setEnabled(True)
+                self.L4_neg_500V_measurement.setFocus()
 
         # Disable the other buttons
         for button in self.hv_buttons:
@@ -1415,16 +1445,22 @@ class HVPSTestWindow(QMainWindow):
         match self.channel:
             case 'BM':
                 self.beam_neg_1kV_measurement.setEnabled(True)
+                self.beam_neg_1kV_measurement.setFocus()
             case 'EX':
                 self.ext_neg_1kV_measurement.setEnabled(True)
+                self.ext_neg_1kV_measurement.setFocus()
             case 'L1':
                 self.L1_neg_1kV_measurement.setEnabled(True)
+                self.L1_neg_1kV_measurement.setFocus()
             case 'L2':
                 self.L2_neg_1kV_measurement.setEnabled(True)
+                self.L2_neg_1kV_measurement.setFocus()
             case 'L3':
                 self.L3_neg_1kV_measurement.setEnabled(True)
+                self.L3_neg_1kV_measurement.setFocus()
             case 'L4':
                 self.L4_neg_1kV_measurement.setEnabled(True)
+                self.L4_neg_1kV_measurement.setFocus()
 
         # Disable the other buttons
         for button in self.hv_buttons:
@@ -1446,6 +1482,7 @@ class HVPSTestWindow(QMainWindow):
         Tests the solenoid at 0.3 A
         """
         self.current1_measurement.setEnabled(True)
+        self.current1_measurement.setFocus()
         current: str = self.test_currents[0]  # '0.3'
         sol_enabled: bool = self.get_sol_enable_state()
         if not sol_enabled:
@@ -1457,6 +1494,7 @@ class HVPSTestWindow(QMainWindow):
         Tests the solenoid at 1.2 A
         """
         self.current2_measurement.setEnabled(True)
+        self.current2_measurement.setFocus()
         current: str = self.test_currents[1]  # '1.2'
         sol_enabled: bool = self.get_sol_enable_state()
         if not sol_enabled:
@@ -1468,6 +1506,7 @@ class HVPSTestWindow(QMainWindow):
         Tests the solenoid at 2.5 A
         """
         self.current3_measurement.setEnabled(True)
+        self.current3_measurement.setFocus()
         current: str = self.test_currents[2]  # '2.5'
         sol_enabled: bool = self.get_sol_enable_state()
         if not sol_enabled:
