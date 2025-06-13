@@ -74,7 +74,7 @@ class HVPSReport(FPDF):
             'Solenoid': ['0.30 A', '1.20 A', '2.50 A'],
         }
 
-        for (channel, settings), (_, readings), (_, measurements) in zip(
+        for (channel, settings), (_, readbacks), (_, measurements) in zip(
             channels.items(), self.readbacks.items(), self.measurements.items()
         ):
             y_start = self.get_y()
@@ -91,7 +91,7 @@ class HVPSReport(FPDF):
 
             # Draw the settings and placeholders
             y_pos = self.get_y()
-            for setting, reading, measurement in zip(settings, readings, measurements):
+            for setting, reading, measurement in zip(settings, readbacks, measurements):
                 self.set_xy(x_start + self.cell_widths[0], y_pos)
                 self.cell(
                     self.cell_widths[1],
