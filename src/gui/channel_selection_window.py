@@ -21,7 +21,11 @@ class ChannelSelectionWindow(QDialog):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowFlags(Qt.WindowType.Dialog)
+        self.setWindowFlags(
+            Qt.WindowType.Dialog
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowTitleHint
+        )
         self.create_gui()
 
     def create_gui(self) -> None:
