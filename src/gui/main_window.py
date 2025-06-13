@@ -138,6 +138,10 @@ class MainWindow(QMainWindow):
             self.sol_setting,
         )
 
+        # Create the dicts that will hold the test readbacks and measurements for the report
+        self.test_readbacks: dict[str, list[str]] = {}
+        self.test_measurements: dict[str, list[str]] = {}
+
         self.create_gui()
         QTimer.singleShot(0, self.open_channel_selection_window)
 
