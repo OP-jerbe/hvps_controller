@@ -255,6 +255,10 @@ class HVPSTestWindow(QMainWindow):
             self.test_neg_1kV_btn,
         ]
 
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        for button in self.hv_buttons:
+            button.setAutoDefault(True)
+
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
         self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
         self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
@@ -307,9 +311,13 @@ class HVPSTestWindow(QMainWindow):
             self.handle_beam_neg_1kV_entered
         )
 
-        # Create the `Disable HV`` and `Next`` buttons
+        # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
         self.next_btn = QPushButton('Next')
+
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        disable_hv_btn.setAutoDefault(True)
+        self.next_btn.setAutoDefault(True)
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -392,6 +400,10 @@ class HVPSTestWindow(QMainWindow):
             self.test_neg_1kV_btn,
         ]
 
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        for button in self.hv_buttons:
+            button.setAutoDefault(True)
+
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
         self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
         self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
@@ -447,6 +459,10 @@ class HVPSTestWindow(QMainWindow):
         # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
         self.next_btn = QPushButton('Next')
+
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        disable_hv_btn.setAutoDefault(True)
+        self.next_btn.setAutoDefault(True)
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -529,6 +545,10 @@ class HVPSTestWindow(QMainWindow):
             self.test_neg_1kV_btn,
         ]
 
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        for button in self.hv_buttons:
+            button.setAutoDefault(True)
+
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
         self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
         self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
@@ -581,9 +601,13 @@ class HVPSTestWindow(QMainWindow):
             self.handle_L1_neg_1kV_entered
         )
 
-        # Create the `Disable HV`` and `Next`` buttons
+        # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
         self.next_btn = QPushButton('Next')
+
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        disable_hv_btn.setAutoDefault(True)
+        self.next_btn.setAutoDefault(True)
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -666,6 +690,10 @@ class HVPSTestWindow(QMainWindow):
             self.test_neg_1kV_btn,
         ]
 
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        for button in self.hv_buttons:
+            button.setAutoDefault(True)
+
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
         self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
         self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
@@ -718,9 +746,13 @@ class HVPSTestWindow(QMainWindow):
             self.handle_L2_neg_1kV_entered
         )
 
-        # Create the `Disable HV`` and `Next`` buttons
+        # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
         self.next_btn = QPushButton('Next')
+
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        disable_hv_btn.setAutoDefault(True)
+        self.next_btn.setAutoDefault(True)
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -803,6 +835,10 @@ class HVPSTestWindow(QMainWindow):
             self.test_neg_1kV_btn,
         ]
 
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        for button in self.hv_buttons:
+            button.setAutoDefault(True)
+
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
         self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
         self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
@@ -855,9 +891,13 @@ class HVPSTestWindow(QMainWindow):
             self.handle_L3_neg_1kV_entered
         )
 
-        # Create the `Disable HV`` and `Next`` buttons
+        # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
         self.next_btn = QPushButton('Next')
+
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        disable_hv_btn.setAutoDefault(True)
+        self.next_btn.setAutoDefault(True)
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -940,6 +980,10 @@ class HVPSTestWindow(QMainWindow):
             self.test_neg_1kV_btn,
         ]
 
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        for button in self.hv_buttons:
+            button.setAutoDefault(True)
+
         # Connect the button clicked Signal to the handle_test_hv_btn Slot
         self.test_pos_100V_btn.clicked.connect(self.handle_test_pos_100V_btn)
         self.test_pos_500V_btn.clicked.connect(self.handle_test_pos_500V_btn)
@@ -992,9 +1036,13 @@ class HVPSTestWindow(QMainWindow):
             self.handle_L4_neg_1kV_entered
         )
 
-        # Create the `Disable HV`` and `Next` buttons
+        # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
         self.next_btn = QPushButton('Next')
+
+        # When the next button has focus and return/enter is pressed, the button is clicked.
+        disable_hv_btn.setAutoDefault(True)
+        self.next_btn.setAutoDefault(True)
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
@@ -1078,6 +1126,10 @@ class HVPSTestWindow(QMainWindow):
             self.current3_btn,
         ]
 
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        for button in self.current_buttons:
+            button.setAutoDefault(True)
+
         self.current1_btn.clicked.connect(self.handle_test_sol_current1_btn)
         self.current2_btn.clicked.connect(self.handle_test_sol_current2_btn)
         self.current3_btn.clicked.connect(self.handle_test_sol_current3_btn)
@@ -1104,11 +1156,15 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable Solenoid` and `Next` buttons
         disable_sol_btn = QPushButton('Disable Solenoid')
-        next_btn = QPushButton('Next')
+        self.next_btn = QPushButton('Next')
+
+        # When the button has focus and return/enter is pressed, the button is clicked.
+        disable_sol_btn.setAutoDefault(True)
+        self.next_btn.setAutoDefault(True)
 
         # Connect the button clicked Signal to the handle Slots
         disable_sol_btn.clicked.connect(self.handle_disable_sol_btn)
-        next_btn.clicked.connect(self.handle_next_btn)
+        self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create a vertical line
         vertical_line = QFrame()
@@ -1131,7 +1187,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.current2_measurement, 3, 1)
         self.main_layout.addWidget(self.current3_measurement, 4, 1)
         self.main_layout.addWidget(disable_sol_btn, 5, 0, 1, 2)
-        self.main_layout.addWidget(next_btn, 6, 0, 1, 2)
+        self.main_layout.addWidget(self.next_btn, 6, 0, 1, 2)
 
         self.main_layout.addWidget(vertical_line, 0, 2, 7, 1)
 
