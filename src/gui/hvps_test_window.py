@@ -201,9 +201,9 @@ class HVPSTestWindow(QMainWindow):
             self.test_complete.emit(self.readbacks, self.measurements)
             self.close()
 
-    ##################################
-    ##### CREATE THE GUI WINDOWS #####
-    ##################################
+    ####################################################################################
+    ############################ Create the GUI windows ################################
+    ####################################################################################
 
     def create_beam_test_gui(self) -> None:
         """
@@ -1391,9 +1391,9 @@ class HVPSTestWindow(QMainWindow):
         # Set the focus on the first button
         self.current1_btn.setFocus()
 
-    ###############################
-    ##### CREATE THE HANDLERS #####
-    ###############################
+    ####################################################################################
+    ########### Create the handlers for the disable, back, and next buttons ############
+    ####################################################################################
 
     def handle_disable_hv_btn(self) -> None:
         """
@@ -1445,7 +1445,10 @@ class HVPSTestWindow(QMainWindow):
         self.current_stage_index += 1
         self.load_current_stage()
 
-    # Create the voltage test button handlers
+    ####################################################################################
+    ################ Create the handlers for the voltage test buttons ##################
+    ####################################################################################
+
     def handle_test_pos_100V_btn(self) -> None:
         """
         Tests the selected channel at 100 V
@@ -1680,7 +1683,10 @@ class HVPSTestWindow(QMainWindow):
             self.hvps.enable_high_voltage()
         self.hvps.set_voltage(self.channel, voltage)
 
-    # Create the current test button handlers
+    ####################################################################################
+    ################# Create the handlers for the current test buttons #################
+    ####################################################################################
+
     def handle_test_sol_current1_btn(self) -> None:
         """
         Tests the solenoid at 0.3 A
@@ -1717,49 +1723,9 @@ class HVPSTestWindow(QMainWindow):
             self.hvps.enable_solenoid_current()
         self.hvps.set_solenoid_current(current)
 
-    # Create the Solenoid pressReturn event handler
-    def handle_current1_entered(self) -> None:
-        readback: str = self.hvps.get_current(self.channel)
-        measurement: str = self.current1_measurement.text()
-        self.readbacks[self.channel][0] = readback
-        self.measurements[self.channel][0] = measurement
-        self.current1_measurement.setEnabled(False)
-        self.current1_measurement.clearFocus()
-        self.hvps.set_solenoid_current('0')
-        self.hvps.disable_solenoid_current()
-        for button in self.current_buttons:
-            button.setEnabled(True)
-        self.current2_btn.setFocus()
-
-    def handle_current2_entered(self) -> None:
-        readback: str = self.hvps.get_current(self.channel)
-        measurement: str = self.current2_measurement.text()
-        self.readbacks[self.channel][1] = readback
-        self.measurements[self.channel][1] = measurement
-        self.current2_measurement.setEnabled(False)
-        self.current2_measurement.clearFocus()
-        self.hvps.set_solenoid_current('0')
-        self.hvps.disable_solenoid_current()
-        for button in self.current_buttons:
-            button.setEnabled(True)
-        self.current3_btn.setFocus()
-
-    def handle_current3_entered(self) -> None:
-        readback: str = self.hvps.get_current(self.channel)
-        measurement: str = self.current3_measurement.text()
-        self.readbacks[self.channel][2] = readback
-        self.measurements[self.channel][2] = measurement
-        self.current3_measurement.setEnabled(False)
-        self.current3_measurement.clearFocus()
-        self.hvps.set_solenoid_current('0')
-        self.hvps.disable_solenoid_current()
-        for button in self.current_buttons:
-            button.setEnabled(True)
-        self.next_btn.setFocus()
-
-    ########################################################################################
-    ##### Create the handlers for returnPressed on QLineEdits for voltage measurements #####
-    ########################################################################################
+    ####################################################################################
+    ### Create the handlers for returnPressed on QLineEdits for voltage measurements ###
+    ####################################################################################
 
     def handle_pos_100V_entered(self, line_edit: QLineEdit) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
@@ -1839,6 +1805,49 @@ class HVPSTestWindow(QMainWindow):
             button.setEnabled(True)
         self.next_btn.setFocus()
 
+    ####################################################################################
+    ### Create the handlers for returnPressed on QLineEdits for current measurements ###
+    ####################################################################################
+
+    def handle_current1_entered(self) -> None:
+        readback: str = self.hvps.get_current(self.channel)
+        measurement: str = self.current1_measurement.text()
+        self.readbacks[self.channel][0] = readback
+        self.measurements[self.channel][0] = measurement
+        self.current1_measurement.setEnabled(False)
+        self.current1_measurement.clearFocus()
+        self.hvps.set_solenoid_current('0')
+        self.hvps.disable_solenoid_current()
+        for button in self.current_buttons:
+            button.setEnabled(True)
+        self.current2_btn.setFocus()
+
+    def handle_current2_entered(self) -> None:
+        readback: str = self.hvps.get_current(self.channel)
+        measurement: str = self.current2_measurement.text()
+        self.readbacks[self.channel][1] = readback
+        self.measurements[self.channel][1] = measurement
+        self.current2_measurement.setEnabled(False)
+        self.current2_measurement.clearFocus()
+        self.hvps.set_solenoid_current('0')
+        self.hvps.disable_solenoid_current()
+        for button in self.current_buttons:
+            button.setEnabled(True)
+        self.current3_btn.setFocus()
+
+    def handle_current3_entered(self) -> None:
+        readback: str = self.hvps.get_current(self.channel)
+        measurement: str = self.current3_measurement.text()
+        self.readbacks[self.channel][2] = readback
+        self.measurements[self.channel][2] = measurement
+        self.current3_measurement.setEnabled(False)
+        self.current3_measurement.clearFocus()
+        self.hvps.set_solenoid_current('0')
+        self.hvps.disable_solenoid_current()
+        for button in self.current_buttons:
+            button.setEnabled(True)
+        self.next_btn.setFocus()
+
 
 if __name__ == '__main__':
     import sys
@@ -1849,7 +1858,7 @@ if __name__ == '__main__':
 
     def create_pdf(readbacks, measurements):
         pdf = HVPSReport(
-            'SN-XXX',
+            'SN-###',
             ['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
             readbacks,
             measurements,
