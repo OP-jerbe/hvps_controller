@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QGridLayout,
     QLabel,
+    QLayout,
     QLineEdit,
     QMainWindow,
     QPushButton,
@@ -33,7 +34,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Get the HVPS object and the occupied channels
         self.hvps = hvps
-        self.occupied_channels: list[str] = occupied_channels
+        self.occupied_channels = occupied_channels
 
         # Define the voltages and currents used for testing the HVPS
         self.test_voltages: tuple[str, ...] = ('100', '500', '1000')  # volts
@@ -43,10 +44,10 @@ class HVPSTestWindow(QMainWindow):
         self.test_stages: list[Callable] = []
 
         # Make lists to hold measurement and readback data
+        # Initialize the lists with the proper length
         self.channel_readbacks: list[str]
         self.channel_measurements: list[str]
 
-        # Initialize the lists with the proper length
         if self.occupied_channels == ['SL']:
             self.channel_readbacks = ['unmeasured'] * 3
             self.channel_measurements = ['unmeasured'] * 3
@@ -151,24 +152,20 @@ class HVPSTestWindow(QMainWindow):
             return False
         return True
 
-    def clear_layout(self) -> None:
+    def clear_layout(self, layouts: list[QLayout]) -> None:
         """
-        Deletes all of the widgets in self.main_layout.
+        Removes all widgets from the provided layouts.
+
+        Args:
+            layouts (list[QLayout]): A list of layout objects to clear.
         """
-
-        # This checks if self.main_layout contains any items (widgets or spacers).
-        # The loop continues as long as there's at least one item.
-        while self.main_layout.count():
-            # removes the first item from the layout and returns it
-            item = self.main_layout.takeAt(0)
-
-            # This tries to retrieve the actual widget from the layout item
-            widget = item.widget()
-
-            # If the item is a widget, deleteLater() is called.
-            # deleteLater() tells Qt to safely delete the widget later, after all current events are processed.
-            if widget is not None:
-                widget.deleteLater()
+        for layout in layouts:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.setParent(None)
+                    widget.deleteLater()
 
     def test_plan(self) -> None:
         """
@@ -203,7 +200,7 @@ class HVPSTestWindow(QMainWindow):
         """
         if self.current_stage_index < len(self.test_stages):
             if self.current_stage_index > 0:
-                self.clear_layout()
+                self.clear_layout([self.back_next_layout, self.main_layout])
             self.test_stages[self.current_stage_index]()
         else:
             self.test_complete.emit(self.readbacks, self.measurements)
@@ -313,14 +310,17 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
+        self.back_btn = QPushButton('Back')
         self.next_btn = QPushButton('Next')
 
         # When the button has focus and return/enter is pressed, the button is clicked.
         disable_hv_btn.setAutoDefault(True)
         self.next_btn.setAutoDefault(True)
+        self.back_btn.setAutoDefault(True)
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+        self.back_btn.clicked.connect(self.handle_back_btn)
         self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
@@ -331,6 +331,10 @@ class HVPSTestWindow(QMainWindow):
         photo_path: Path = self.root_dir / 'assets' / 'beam.jpg'
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
+
+        self.back_next_layout = QGridLayout()
+        self.back_next_layout.addWidget(self.back_btn, 0, 0)
+        self.back_next_layout.addWidget(self.next_btn, 0, 1)
 
         self.main_layout.addWidget(
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
@@ -349,7 +353,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.beam_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.beam_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
+        self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -357,6 +361,9 @@ class HVPSTestWindow(QMainWindow):
         container.setLayout(self.main_layout)
 
         self.setCentralWidget(container)
+
+        # Set the focus on the first button
+        self.test_pos_100V_btn.setFocus()
 
     def create_ext_test_gui(self) -> None:
         """
@@ -458,6 +465,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
+        self.back_btn = QPushButton('Back')
         self.next_btn = QPushButton('Next')
 
         # When the button has focus and return/enter is pressed, the button is clicked.
@@ -466,6 +474,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+        self.back_btn.clicked.connect(self.handle_back_btn)
         self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
@@ -476,6 +485,10 @@ class HVPSTestWindow(QMainWindow):
         photo_path: Path = self.root_dir / 'assets' / 'L1.jpg'
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
+
+        self.back_next_layout = QGridLayout()
+        self.back_next_layout.addWidget(self.back_btn, 0, 0)
+        self.back_next_layout.addWidget(self.next_btn, 0, 1)
 
         self.main_layout.addWidget(
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
@@ -494,7 +507,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.ext_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.ext_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
+        self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -502,6 +515,9 @@ class HVPSTestWindow(QMainWindow):
         container.setLayout(self.main_layout)
 
         self.setCentralWidget(container)
+
+        # Set the focus on the first button
+        self.test_pos_100V_btn.setFocus()
 
     def create_L1_test_gui(self) -> None:
         """
@@ -603,6 +619,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
+        self.back_btn = QPushButton('Back')
         self.next_btn = QPushButton('Next')
 
         # When the button has focus and return/enter is pressed, the button is clicked.
@@ -611,6 +628,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+        self.back_btn.clicked.connect(self.handle_back_btn)
         self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
@@ -621,6 +639,10 @@ class HVPSTestWindow(QMainWindow):
         photo_path: Path = self.root_dir / 'assets' / 'L1.jpg'
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
+
+        self.back_next_layout = QGridLayout()
+        self.back_next_layout.addWidget(self.back_btn, 0, 0)
+        self.back_next_layout.addWidget(self.next_btn, 0, 1)
 
         self.main_layout.addWidget(
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
@@ -639,7 +661,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L1_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.L1_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
+        self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -647,6 +669,9 @@ class HVPSTestWindow(QMainWindow):
         container.setLayout(self.main_layout)
 
         self.setCentralWidget(container)
+
+        # Set the focus on the first button
+        self.test_pos_100V_btn.setFocus()
 
     def create_L2_test_gui(self) -> None:
         """
@@ -748,6 +773,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
+        self.back_btn = QPushButton('Back')
         self.next_btn = QPushButton('Next')
 
         # When the button has focus and return/enter is pressed, the button is clicked.
@@ -756,6 +782,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+        self.back_btn.clicked.connect(self.handle_back_btn)
         self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
@@ -766,6 +793,10 @@ class HVPSTestWindow(QMainWindow):
         photo_path: Path = self.root_dir / 'assets' / 'L2.jpg'
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
+
+        self.back_next_layout = QGridLayout()
+        self.back_next_layout.addWidget(self.back_btn, 0, 0)
+        self.back_next_layout.addWidget(self.next_btn, 0, 1)
 
         self.main_layout.addWidget(
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
@@ -784,7 +815,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L2_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.L2_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
+        self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -792,6 +823,9 @@ class HVPSTestWindow(QMainWindow):
         container.setLayout(self.main_layout)
 
         self.setCentralWidget(container)
+
+        # Set the focus on the first button
+        self.test_pos_100V_btn.setFocus()
 
     def create_L3_test_gui(self) -> None:
         """
@@ -893,6 +927,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
+        self.back_btn = QPushButton('Back')
         self.next_btn = QPushButton('Next')
 
         # When the button has focus and return/enter is pressed, the button is clicked.
@@ -901,6 +936,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+        self.back_btn.clicked.connect(self.handle_back_btn)
         self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
@@ -911,6 +947,10 @@ class HVPSTestWindow(QMainWindow):
         photo_path: Path = self.root_dir / 'assets' / 'L3.jpg'
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
+
+        self.back_next_layout = QGridLayout()
+        self.back_next_layout.addWidget(self.back_btn, 0, 0)
+        self.back_next_layout.addWidget(self.next_btn, 0, 1)
 
         self.main_layout.addWidget(
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
@@ -929,7 +969,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L3_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.L3_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
+        self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -937,6 +977,9 @@ class HVPSTestWindow(QMainWindow):
         container.setLayout(self.main_layout)
 
         self.setCentralWidget(container)
+
+        # Set the focus on the first button
+        self.test_pos_100V_btn.setFocus()
 
     def create_L4_test_gui(self) -> None:
         """
@@ -1038,6 +1081,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable HV` and `Next` buttons
         disable_hv_btn = QPushButton('Disable HV')
+        self.back_btn = QPushButton('Back')
         self.next_btn = QPushButton('Next')
 
         # When the next button has focus and return/enter is pressed, the button is clicked.
@@ -1046,6 +1090,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Connect the button clicked Signal to the handle Slots
         disable_hv_btn.clicked.connect(self.handle_disable_hv_btn)
+        self.back_btn.clicked.connect(self.handle_back_btn)
         self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create vertical line
@@ -1056,6 +1101,10 @@ class HVPSTestWindow(QMainWindow):
         photo_path: Path = self.root_dir / 'assets' / 'L4.jpg'
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
+
+        self.back_next_layout = QGridLayout()
+        self.back_next_layout.addWidget(self.back_btn, 0, 0)
+        self.back_next_layout.addWidget(self.next_btn, 0, 1)
 
         self.main_layout.addWidget(
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
@@ -1074,7 +1123,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L4_neg_500V_measurement, 6, 1)
         self.main_layout.addWidget(self.L4_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
-        self.main_layout.addWidget(self.next_btn, 9, 0, 1, 2)
+        self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
         self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
         self.main_layout.addWidget(photo, 0, 3, 9, 1)
 
@@ -1082,6 +1131,9 @@ class HVPSTestWindow(QMainWindow):
         container.setLayout(self.main_layout)
 
         self.setCentralWidget(container)
+
+        # Set the focus on the first button
+        self.test_pos_100V_btn.setFocus()
 
     def create_sol_test_gui(self) -> None:
         """
@@ -1156,6 +1208,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the `Disable Solenoid` and `Next` buttons
         disable_sol_btn = QPushButton('Disable Solenoid')
+        self.back_btn = QPushButton('Back')
         self.next_btn = QPushButton('Next')
 
         # When the button has focus and return/enter is pressed, the button is clicked.
@@ -1164,6 +1217,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Connect the button clicked Signal to the handle Slots
         disable_sol_btn.clicked.connect(self.handle_disable_sol_btn)
+        self.back_btn.clicked.connect(self.handle_back_btn)
         self.next_btn.clicked.connect(self.handle_next_btn)
 
         # Create a vertical line
@@ -1176,6 +1230,10 @@ class HVPSTestWindow(QMainWindow):
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
 
+        self.back_next_layout = QGridLayout()
+        self.back_next_layout.addWidget(self.back_btn, 0, 0)
+        self.back_next_layout.addWidget(self.next_btn, 0, 1)
+
         self.main_layout.addWidget(
             title_label, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter
         )
@@ -1187,7 +1245,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.current2_measurement, 3, 1)
         self.main_layout.addWidget(self.current3_measurement, 4, 1)
         self.main_layout.addWidget(disable_sol_btn, 5, 0, 1, 2)
-        self.main_layout.addWidget(self.next_btn, 6, 0, 1, 2)
+        self.main_layout.addLayout(self.back_next_layout, 6, 0, 1, 2)
 
         self.main_layout.addWidget(vertical_line, 0, 2, 7, 1)
 
@@ -1197,6 +1255,9 @@ class HVPSTestWindow(QMainWindow):
         container.setLayout(self.main_layout)
 
         self.setCentralWidget(container)
+
+        # Set the focus on the first button
+        self.current1_btn.setFocus()
 
     ###############################
     ##### CREATE THE HANDLERS #####
@@ -1217,6 +1278,9 @@ class HVPSTestWindow(QMainWindow):
         """
         if self.get_sol_enable_state() is True:
             self.hvps.disable_solenoid_current()
+
+    def handle_back_btn(self) -> None:
+        print('Back button pressed')
 
     def handle_next_btn(self) -> None:
         """
@@ -2085,3 +2149,30 @@ class HVPSTestWindow(QMainWindow):
     #     if self.get_hv_enable_state() is False:
     #         self.hvps.enable_high_voltage()
     #     self.hvps.set_voltage(self.channel, voltage)
+
+
+# if __name__ == '__main__':
+#     import sys
+
+#     from PySide6.QtWidgets import QApplication
+
+#     from src.pdf import HVPSReport
+
+#     def create_pdf(readbacks, measurements):
+#         pdf = HVPSReport(
+#             'SN-XXX',
+#             ['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
+#             readbacks,
+#             measurements,
+#         )
+#         pdf.open()
+
+#     version = '1.0.0'
+#     app = QApplication([])
+#     window = HVPSTestWindow(
+#         hvps=HVPSv3(sock=None),
+#         occupied_channels=['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
+#     )
+#     window.test_complete.connect(create_pdf)
+#     window.show()
+#     sys.exit(app.exec())
