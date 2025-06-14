@@ -43,18 +43,6 @@ class HVPSTestWindow(QMainWindow):
         # Make empty list to hold the gui creation function list.
         self.test_stages: list[Callable] = []
 
-        # Make lists to hold measurement and readback data
-        # Initialize the lists with the proper length
-        self.channel_readbacks: list[str]
-        self.channel_measurements: list[str]
-
-        if self.occupied_channels == ['SL']:
-            self.channel_readbacks = ['unmeasured'] * 3
-            self.channel_measurements = ['unmeasured'] * 3
-        else:
-            self.channel_readbacks = ['unmeasured'] * 6
-            self.channel_measurements = ['unmeasured'] * 6
-
         # Make pre-populated dictionaries to hold the readback and measurement data
         self.readbacks: dict[str, list[str]] = {
             'BM': ['N/A'] * 6,
@@ -91,6 +79,9 @@ class HVPSTestWindow(QMainWindow):
         self.lv_validator = QRegularExpressionValidator(lv_regex)
         self.hv_validator = QRegularExpressionValidator(hv_regex)
         self.sol_validator = QRegularExpressionValidator(sol_regex)
+
+        # Create the back back button pressed flag
+        self.back_button_pressed: bool = False
 
         # Create the main layout
         self.main_layout = QGridLayout()
@@ -199,7 +190,11 @@ class HVPSTestWindow(QMainWindow):
         emits the test_complete signal and closes the window.
         """
         if self.current_stage_index < len(self.test_stages):
-            if self.current_stage_index > 0:
+            if self.back_button_pressed:  # if loading due to back_btn clicked
+                self.clear_layout([self.back_next_layout, self.main_layout])
+            if (
+                self.current_stage_index > 0 and not self.back_button_pressed
+            ):  # if loading due to next_btn clicked
                 self.clear_layout([self.back_next_layout, self.main_layout])
             self.test_stages[self.current_stage_index]()
         else:
@@ -271,6 +266,26 @@ class HVPSTestWindow(QMainWindow):
         self.beam_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.beam_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.beam_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
+        self.line_edits = [
+            self.beam_pos_100V_measurement,
+            self.beam_pos_500V_measurement,
+            self.beam_pos_1kV_measurement,
+            self.beam_neg_100V_measurement,
+            self.beam_neg_500V_measurement,
+            self.beam_neg_1kV_measurement,
+        ]
+
+        # Set the text of the QLineEdits
+        for line_edit, measurement in zip(
+            self.line_edits, self.measurements[self.channel]
+        ):
+            if measurement in ['unmeasured', 'N/A']:
+                continue
+            else:
+                line_edit.setText(measurement)
+
+        if self.back_button_pressed:
+            self.back_button_pressed = False
 
         # Set the QLine edits to be disabled
         self.beam_pos_100V_measurement.setEnabled(False)
@@ -312,6 +327,9 @@ class HVPSTestWindow(QMainWindow):
         disable_hv_btn = QPushButton('Disable HV')
         self.back_btn = QPushButton('Back')
         self.next_btn = QPushButton('Next')
+
+        # Disable the back button for beam scan gui
+        self.back_btn.setEnabled(False)
 
         # When the button has focus and return/enter is pressed, the button is clicked.
         disable_hv_btn.setAutoDefault(True)
@@ -426,6 +444,26 @@ class HVPSTestWindow(QMainWindow):
         self.ext_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.ext_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.ext_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
+        self.line_edits = [
+            self.ext_pos_100V_measurement,
+            self.ext_pos_500V_measurement,
+            self.ext_pos_1kV_measurement,
+            self.ext_neg_100V_measurement,
+            self.ext_neg_500V_measurement,
+            self.ext_neg_1kV_measurement,
+        ]
+
+        # Set the text of the QLineEdits
+        for line_edit, measurement in zip(
+            self.line_edits, self.measurements[self.channel]
+        ):
+            if measurement in ['unmeasured', 'N/A']:
+                continue
+            else:
+                line_edit.setText(measurement)
+
+        if self.back_button_pressed:
+            self.back_button_pressed = False
 
         # Set the QLine edits to be disabled
         self.ext_pos_100V_measurement.setEnabled(False)
@@ -580,6 +618,26 @@ class HVPSTestWindow(QMainWindow):
         self.L1_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L1_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L1_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
+        self.line_edits = [
+            self.L1_pos_100V_measurement,
+            self.L1_pos_500V_measurement,
+            self.L1_pos_1kV_measurement,
+            self.L1_neg_100V_measurement,
+            self.L1_neg_500V_measurement,
+            self.L1_neg_1kV_measurement,
+        ]
+
+        # Set the text of the QLineEdits
+        for line_edit, measurement in zip(
+            self.line_edits, self.measurements[self.channel]
+        ):
+            if measurement in ['unmeasured', 'N/A']:
+                continue
+            else:
+                line_edit.setText(measurement)
+
+        if self.back_button_pressed:
+            self.back_button_pressed = False
 
         # Set the QLine edits to be disabled
         self.L1_pos_100V_measurement.setEnabled(False)
@@ -734,6 +792,26 @@ class HVPSTestWindow(QMainWindow):
         self.L2_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L2_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L2_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
+        self.line_edits = [
+            self.L2_pos_100V_measurement,
+            self.L2_pos_500V_measurement,
+            self.L2_pos_1kV_measurement,
+            self.L2_neg_100V_measurement,
+            self.L2_neg_500V_measurement,
+            self.L2_neg_1kV_measurement,
+        ]
+
+        # Set the text of the QLineEdits
+        for line_edit, measurement in zip(
+            self.line_edits, self.measurements[self.channel]
+        ):
+            if measurement in ['unmeasured', 'N/A']:
+                continue
+            else:
+                line_edit.setText(measurement)
+
+        if self.back_button_pressed:
+            self.back_button_pressed = False
 
         # Set the QLine edits to be disabled
         self.L2_pos_100V_measurement.setEnabled(False)
@@ -888,6 +966,26 @@ class HVPSTestWindow(QMainWindow):
         self.L3_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L3_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L3_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
+        self.line_edits = [
+            self.L3_pos_100V_measurement,
+            self.L3_pos_500V_measurement,
+            self.L3_pos_1kV_measurement,
+            self.L3_neg_100V_measurement,
+            self.L3_neg_500V_measurement,
+            self.L3_neg_1kV_measurement,
+        ]
+
+        # Set the text of the QLineEdits
+        for line_edit, measurement in zip(
+            self.line_edits, self.measurements[self.channel]
+        ):
+            if measurement in ['unmeasured', 'N/A']:
+                continue
+            else:
+                line_edit.setText(measurement)
+
+        if self.back_button_pressed:
+            self.back_button_pressed = False
 
         # Set the QLine edits to be disabled
         self.L3_pos_100V_measurement.setEnabled(False)
@@ -1042,6 +1140,26 @@ class HVPSTestWindow(QMainWindow):
         self.L4_neg_100V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L4_neg_500V_measurement = QLineEdit(placeholderText='Enter measurement')
         self.L4_neg_1kV_measurement = QLineEdit(placeholderText='Enter measurement')
+        self.line_edits = [
+            self.L4_pos_100V_measurement,
+            self.L4_pos_500V_measurement,
+            self.L4_pos_1kV_measurement,
+            self.L4_neg_100V_measurement,
+            self.L4_neg_500V_measurement,
+            self.L4_neg_1kV_measurement,
+        ]
+
+        # Set the text of the QLineEdits
+        for line_edit, measurement in zip(
+            self.line_edits, self.measurements[self.channel]
+        ):
+            if measurement in ['unmeasured', 'N/A']:
+                continue
+            else:
+                line_edit.setText(measurement)
+
+        if self.back_button_pressed:
+            self.back_button_pressed = False
 
         # Set the QLine edits to be disabled
         self.L4_pos_100V_measurement.setEnabled(False)
@@ -1190,6 +1308,20 @@ class HVPSTestWindow(QMainWindow):
         self.current1_measurement = QLineEdit(placeholderText='Enter measurement')
         self.current2_measurement = QLineEdit(placeholderText='Enter measurement')
         self.current3_measurement = QLineEdit(placeholderText='Enter measurement')
+        self.line_edits = [
+            self.current1_measurement,
+            self.current2_measurement,
+            self.current3_measurement,
+        ]
+
+        # Set the text of the QLineEdits
+        for line_edit, measurement in zip(
+            self.line_edits, self.measurements[self.channel]
+        ):
+            if measurement in ['unmeasured', 'N/A']:
+                continue
+            else:
+                line_edit.setText(measurement)
 
         # Set the QLine edits to be disabled
         self.current1_measurement.setEnabled(False)
@@ -1280,7 +1412,18 @@ class HVPSTestWindow(QMainWindow):
             self.hvps.disable_solenoid_current()
 
     def handle_back_btn(self) -> None:
-        print('Back button pressed')
+        print(f'{self.measurements = }')
+        print(f'{self.readbacks = }')
+        self.back_button_pressed = True
+        if self.get_hv_enable_state() is True:
+            self.hvps.disable_high_voltage()
+            self.hvps.set_voltage(self.channel, '0')
+        if self.get_sol_enable_state() is True:
+            self.hvps.disable_solenoid_current()
+            self.hvps.set_solenoid_current('0')
+
+        self.current_stage_index -= 1
+        self.load_current_stage()
 
     def handle_next_btn(self) -> None:
         """
@@ -1288,26 +1431,16 @@ class HVPSTestWindow(QMainWindow):
         If the solenoid is on, turn it off and set the solenoid current target to zero.
         Adds the channel measurements to the measurements dictionary
         Adds the channel readbacks to the readbacks dictionary
-        Resets the channel_measurements and channel_readbacks lists
         Calls load_current_stage method.
         """
-
-        if self.get_hv_enable_state() is True:  # disable btn not pressed
+        print(f'{self.measurements = }')
+        print(f'{self.readbacks = }')
+        if self.get_hv_enable_state() is True:
             self.hvps.disable_high_voltage()
             self.hvps.set_voltage(self.channel, '0')
-        if self.get_sol_enable_state() is True:  # disable btn not pressed
+        if self.get_sol_enable_state() is True:
             self.hvps.disable_solenoid_current()
             self.hvps.set_solenoid_current('0')
-
-        self.measurements[self.channel] = self.channel_measurements
-        self.readbacks[self.channel] = self.channel_readbacks
-
-        if self.channel != 'SL':
-            self.channel_measurements = ['unmeasured'] * 6
-            self.channel_readbacks = ['unmeasured'] * 6
-        else:
-            self.channel_measurements = ['unmeasured'] * 3
-            self.channel_readbacks = ['unmeasured'] * 3
 
         self.current_stage_index += 1
         self.load_current_stage()
@@ -1588,8 +1721,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_beam_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_pos_100V_measurement.text()
-        self.channel_readbacks[0] = readback
-        self.channel_measurements[0] = measurement
+        self.readbacks[self.channel][0] = readback
+        self.measurements[self.channel][0] = measurement
         self.beam_pos_100V_measurement.setEnabled(False)
         self.beam_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1601,8 +1734,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_beam_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_pos_500V_measurement.text()
-        self.channel_readbacks[1] = readback
-        self.channel_measurements[1] = measurement
+        self.readbacks[self.channel][1] = readback
+        self.measurements[self.channel][1] = measurement
         self.beam_pos_500V_measurement.setEnabled(False)
         self.beam_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1614,8 +1747,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_beam_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_pos_1kV_measurement.text()
-        self.channel_readbacks[2] = readback
-        self.channel_measurements[2] = measurement
+        self.readbacks[self.channel][2] = readback
+        self.measurements[self.channel][2] = measurement
         self.beam_pos_1kV_measurement.setEnabled(False)
         self.beam_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1627,8 +1760,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_beam_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_neg_100V_measurement.text()
-        self.channel_readbacks[3] = readback
-        self.channel_measurements[3] = measurement
+        self.readbacks[self.channel][3] = readback
+        self.measurements[self.channel][3] = measurement
         self.beam_neg_100V_measurement.setEnabled(False)
         self.beam_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1640,8 +1773,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_beam_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_neg_500V_measurement.text()
-        self.channel_readbacks[4] = readback
-        self.channel_measurements[4] = measurement
+        self.readbacks[self.channel][4] = readback
+        self.measurements[self.channel][4] = measurement
         self.beam_neg_500V_measurement.setEnabled(False)
         self.beam_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1653,8 +1786,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_beam_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.beam_neg_1kV_measurement.text()
-        self.channel_readbacks[5] = readback
-        self.channel_measurements[5] = measurement
+        self.readbacks[self.channel][5] = readback
+        self.measurements[self.channel][5] = measurement
         self.beam_neg_1kV_measurement.setEnabled(False)
         self.beam_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1667,8 +1800,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_ext_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_pos_100V_measurement.text()
-        self.channel_readbacks[0] = readback
-        self.channel_measurements[0] = measurement
+        self.readbacks[self.channel][0] = readback
+        self.measurements[self.channel][0] = measurement
         self.ext_pos_100V_measurement.setEnabled(False)
         self.ext_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1680,8 +1813,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_ext_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_pos_500V_measurement.text()
-        self.channel_readbacks[1] = readback
-        self.channel_measurements[1] = measurement
+        self.readbacks[self.channel][1] = readback
+        self.measurements[self.channel][1] = measurement
         self.ext_pos_500V_measurement.setEnabled(False)
         self.ext_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1693,8 +1826,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_ext_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_pos_1kV_measurement.text()
-        self.channel_readbacks[2] = readback
-        self.channel_measurements[2] = measurement
+        self.readbacks[self.channel][2] = readback
+        self.measurements[self.channel][2] = measurement
         self.ext_pos_1kV_measurement.setEnabled(False)
         self.ext_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1706,8 +1839,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_ext_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_neg_100V_measurement.text()
-        self.channel_readbacks[3] = readback
-        self.channel_measurements[3] = measurement
+        self.readbacks[self.channel][3] = readback
+        self.measurements[self.channel][3] = measurement
         self.ext_neg_100V_measurement.setEnabled(False)
         self.ext_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1719,8 +1852,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_ext_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_neg_500V_measurement.text()
-        self.channel_readbacks[4] = readback
-        self.channel_measurements[4] = measurement
+        self.readbacks[self.channel][4] = readback
+        self.measurements[self.channel][4] = measurement
         self.ext_neg_500V_measurement.setEnabled(False)
         self.ext_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1732,8 +1865,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_ext_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.ext_neg_1kV_measurement.text()
-        self.channel_readbacks[5] = readback
-        self.channel_measurements[5] = measurement
+        self.readbacks[self.channel][5] = readback
+        self.measurements[self.channel][5] = measurement
         self.ext_neg_1kV_measurement.setEnabled(False)
         self.ext_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1746,8 +1879,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L1_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_pos_100V_measurement.text()
-        self.channel_readbacks[0] = readback
-        self.channel_measurements[0] = measurement
+        self.readbacks[self.channel][0] = readback
+        self.measurements[self.channel][0] = measurement
         self.L1_pos_100V_measurement.setEnabled(False)
         self.L1_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1759,8 +1892,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L1_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_pos_500V_measurement.text()
-        self.channel_readbacks[1] = readback
-        self.channel_measurements[1] = measurement
+        self.readbacks[self.channel][1] = readback
+        self.measurements[self.channel][1] = measurement
         self.L1_pos_500V_measurement.setEnabled(False)
         self.L1_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1772,8 +1905,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L1_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_pos_1kV_measurement.text()
-        self.channel_readbacks[2] = readback
-        self.channel_measurements[2] = measurement
+        self.readbacks[self.channel][2] = readback
+        self.measurements[self.channel][2] = measurement
         self.L1_pos_1kV_measurement.setEnabled(False)
         self.L1_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1785,8 +1918,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L1_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_neg_100V_measurement.text()
-        self.channel_readbacks[3] = readback
-        self.channel_measurements[3] = measurement
+        self.readbacks[self.channel][3] = readback
+        self.measurements[self.channel][3] = measurement
         self.L1_neg_100V_measurement.setEnabled(False)
         self.L1_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1798,8 +1931,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L1_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_neg_500V_measurement.text()
-        self.channel_readbacks[4] = readback
-        self.channel_measurements[4] = measurement
+        self.readbacks[self.channel][4] = readback
+        self.measurements[self.channel][4] = measurement
         self.L1_neg_500V_measurement.setEnabled(False)
         self.L1_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1811,8 +1944,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L1_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L1_neg_1kV_measurement.text()
-        self.channel_readbacks[5] = readback
-        self.channel_measurements[5] = measurement
+        self.readbacks[self.channel][5] = readback
+        self.measurements[self.channel][5] = measurement
         self.L1_neg_1kV_measurement.setEnabled(False)
         self.L1_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1825,8 +1958,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L2_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_pos_100V_measurement.text()
-        self.channel_readbacks[0] = readback
-        self.channel_measurements[0] = measurement
+        self.readbacks[self.channel][0] = readback
+        self.measurements[self.channel][0] = measurement
         self.L2_pos_100V_measurement.setEnabled(False)
         self.L2_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1838,8 +1971,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L2_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_pos_500V_measurement.text()
-        self.channel_readbacks[1] = readback
-        self.channel_measurements[1] = measurement
+        self.readbacks[self.channel][1] = readback
+        self.measurements[self.channel][1] = measurement
         self.L2_pos_500V_measurement.setEnabled(False)
         self.L2_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1851,8 +1984,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L2_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_pos_1kV_measurement.text()
-        self.channel_readbacks[2] = readback
-        self.channel_measurements[2] = measurement
+        self.readbacks[self.channel][2] = readback
+        self.measurements[self.channel][2] = measurement
         self.L2_pos_1kV_measurement.setEnabled(False)
         self.L2_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1864,8 +1997,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L2_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_neg_100V_measurement.text()
-        self.channel_readbacks[3] = readback
-        self.channel_measurements[3] = measurement
+        self.readbacks[self.channel][3] = readback
+        self.measurements[self.channel][3] = measurement
         self.L2_neg_100V_measurement.setEnabled(False)
         self.L2_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1877,8 +2010,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L2_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_neg_500V_measurement.text()
-        self.channel_readbacks[4] = readback
-        self.channel_measurements[4] = measurement
+        self.readbacks[self.channel][4] = readback
+        self.measurements[self.channel][4] = measurement
         self.L2_neg_500V_measurement.setEnabled(False)
         self.L2_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1890,8 +2023,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L2_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L2_neg_1kV_measurement.text()
-        self.channel_readbacks[5] = readback
-        self.channel_measurements[5] = measurement
+        self.readbacks[self.channel][5] = readback
+        self.measurements[self.channel][5] = measurement
         self.L2_neg_1kV_measurement.setEnabled(False)
         self.L2_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1904,8 +2037,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L3_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_pos_100V_measurement.text()
-        self.channel_readbacks[0] = readback
-        self.channel_measurements[0] = measurement
+        self.readbacks[self.channel][0] = readback
+        self.measurements[self.channel][0] = measurement
         self.L3_pos_100V_measurement.setEnabled(False)
         self.L3_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1917,8 +2050,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L3_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_pos_500V_measurement.text()
-        self.channel_readbacks[1] = readback
-        self.channel_measurements[1] = measurement
+        self.readbacks[self.channel][1] = readback
+        self.measurements[self.channel][1] = measurement
         self.L3_pos_500V_measurement.setEnabled(False)
         self.L3_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1930,8 +2063,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L3_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_pos_1kV_measurement.text()
-        self.channel_readbacks[2] = readback
-        self.channel_measurements[2] = measurement
+        self.readbacks[self.channel][2] = readback
+        self.measurements[self.channel][2] = measurement
         self.L3_pos_1kV_measurement.setEnabled(False)
         self.L3_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1943,8 +2076,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L3_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_neg_100V_measurement.text()
-        self.channel_readbacks[3] = readback
-        self.channel_measurements[3] = measurement
+        self.readbacks[self.channel][3] = readback
+        self.measurements[self.channel][3] = measurement
         self.L3_neg_100V_measurement.setEnabled(False)
         self.L3_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1956,8 +2089,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L3_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_neg_500V_measurement.text()
-        self.channel_readbacks[4] = readback
-        self.channel_measurements[4] = measurement
+        self.readbacks[self.channel][4] = readback
+        self.measurements[self.channel][4] = measurement
         self.L3_neg_500V_measurement.setEnabled(False)
         self.L3_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1969,8 +2102,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L3_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L3_neg_1kV_measurement.text()
-        self.channel_readbacks[5] = readback
-        self.channel_measurements[5] = measurement
+        self.readbacks[self.channel][5] = readback
+        self.measurements[self.channel][5] = measurement
         self.L3_neg_1kV_measurement.setEnabled(False)
         self.L3_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1983,8 +2116,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L4_pos_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_pos_100V_measurement.text()
-        self.channel_readbacks[0] = readback
-        self.channel_measurements[0] = measurement
+        self.readbacks[self.channel][0] = readback
+        self.measurements[self.channel][0] = measurement
         self.L4_pos_100V_measurement.setEnabled(False)
         self.L4_pos_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -1996,8 +2129,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L4_pos_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_pos_500V_measurement.text()
-        self.channel_readbacks[1] = readback
-        self.channel_measurements[1] = measurement
+        self.readbacks[self.channel][1] = readback
+        self.measurements[self.channel][1] = measurement
         self.L4_pos_500V_measurement.setEnabled(False)
         self.L4_pos_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -2009,8 +2142,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L4_pos_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_pos_1kV_measurement.text()
-        self.channel_readbacks[2] = readback
-        self.channel_measurements[2] = measurement
+        self.readbacks[self.channel][2] = readback
+        self.measurements[self.channel][2] = measurement
         self.L4_pos_1kV_measurement.setEnabled(False)
         self.L4_pos_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -2022,8 +2155,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L4_neg_100V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_neg_100V_measurement.text()
-        self.channel_readbacks[3] = readback
-        self.channel_measurements[3] = measurement
+        self.readbacks[self.channel][3] = readback
+        self.measurements[self.channel][3] = measurement
         self.L4_neg_100V_measurement.setEnabled(False)
         self.L4_neg_100V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -2035,8 +2168,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L4_neg_500V_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_neg_500V_measurement.text()
-        self.channel_readbacks[4] = readback
-        self.channel_measurements[4] = measurement
+        self.readbacks[self.channel][4] = readback
+        self.measurements[self.channel][4] = measurement
         self.L4_neg_500V_measurement.setEnabled(False)
         self.L4_neg_500V_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -2048,8 +2181,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_L4_neg_1kV_entered(self) -> None:
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = self.L4_neg_1kV_measurement.text()
-        self.channel_readbacks[5] = readback
-        self.channel_measurements[5] = measurement
+        self.readbacks[self.channel][5] = readback
+        self.measurements[self.channel][5] = measurement
         self.L4_neg_1kV_measurement.setEnabled(False)
         self.L4_neg_1kV_measurement.clearFocus()
         self.hvps.set_voltage(self.channel, '0')
@@ -2062,8 +2195,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_current1_entered(self) -> None:
         readback: str = self.hvps.get_current(self.channel)
         measurement: str = self.current1_measurement.text()
-        self.channel_readbacks[0] = readback
-        self.channel_measurements[0] = measurement
+        self.readbacks[self.channel][0] = readback
+        self.measurements[self.channel][0] = measurement
         self.current1_measurement.setEnabled(False)
         self.current1_measurement.clearFocus()
         self.hvps.set_solenoid_current('0')
@@ -2075,8 +2208,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_current2_entered(self) -> None:
         readback: str = self.hvps.get_current(self.channel)
         measurement: str = self.current2_measurement.text()
-        self.channel_readbacks[1] = readback
-        self.channel_measurements[1] = measurement
+        self.readbacks[self.channel][1] = readback
+        self.measurements[self.channel][1] = measurement
         self.current2_measurement.setEnabled(False)
         self.current2_measurement.clearFocus()
         self.hvps.set_solenoid_current('0')
@@ -2088,8 +2221,8 @@ class HVPSTestWindow(QMainWindow):
     def handle_current3_entered(self) -> None:
         readback: str = self.hvps.get_current(self.channel)
         measurement: str = self.current3_measurement.text()
-        self.channel_readbacks[2] = readback
-        self.channel_measurements[2] = measurement
+        self.readbacks[self.channel][2] = readback
+        self.measurements[self.channel][2] = measurement
         self.current3_measurement.setEnabled(False)
         self.current3_measurement.clearFocus()
         self.hvps.set_solenoid_current('0')
