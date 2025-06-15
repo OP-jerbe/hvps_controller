@@ -10,11 +10,10 @@ from src.gui.main_window import MainWindow
 
 """
 TODO:
-1) Add a `BACK` button to the test window that allows the user to go back to the previous channel test
 
-2) Get the actual pictures showing voltmeter setup for each test into the assets folder.
+1) Get the actual pictures showing voltmeter setup for each test into the assets folder.
 
-3) Write the User Guide
+2) Write the User Guide
 """
 
 
