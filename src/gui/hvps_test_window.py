@@ -40,27 +40,29 @@ class HVPSTestWindow(QMainWindow):
         self.test_voltages: tuple[str, ...] = ('100', '500', '1000')  # volts
         self.test_currents: tuple[str, ...] = ('0.3', '1.2', '2.5')  # amps
 
-        # Make empty list to hold the gui creation function list.
+        # Make an empty list that will be used to hold the create_gui methods for each
+        # of the channels to test.
         self.test_stages: list[Callable] = []
 
         # Make pre-populated dictionaries to hold the readback and measurement data
+        # 'N/I' is used
         self.readbacks: dict[str, list[str]] = {
-            'BM': ['N/A'] * 6,
-            'EX': ['N/A'] * 6,
-            'L1': ['N/A'] * 6,
-            'L2': ['N/A'] * 6,
-            'L3': ['N/A'] * 6,
-            'L4': ['N/A'] * 6,
-            'SL': ['N/A'] * 3,
+            'BM': ['N/I'] * 6,
+            'EX': ['N/I'] * 6,
+            'L1': ['N/I'] * 6,
+            'L2': ['N/I'] * 6,
+            'L3': ['N/I'] * 6,
+            'L4': ['N/I'] * 6,
+            'SL': ['N/I'] * 3,
         }
         self.measurements: dict[str, list[str]] = {
-            'BM': ['N/A'] * 6,
-            'EX': ['N/A'] * 6,
-            'L1': ['N/A'] * 6,
-            'L2': ['N/A'] * 6,
-            'L3': ['N/A'] * 6,
-            'L4': ['N/A'] * 6,
-            'SL': ['N/A'] * 3,
+            'BM': ['N/I'] * 6,
+            'EX': ['N/I'] * 6,
+            'L1': ['N/I'] * 6,
+            'L2': ['N/I'] * 6,
+            'L3': ['N/I'] * 6,
+            'L4': ['N/I'] * 6,
+            'SL': ['N/I'] * 3,
         }
 
         # Set the window Icon and style the window
@@ -89,25 +91,62 @@ class HVPSTestWindow(QMainWindow):
         # Call the first gui window where the user selects the occupied channels.
         self.test_plan()
 
-    def closeEvent(self, event: QCloseEvent) -> None:
+    def test_plan(self) -> None:
         """
-        Handles what happens when the window closes.
-        Checks if the HV is still enabled. If it is, disables HV and sets
-        the target of the current channel to zero.
-        Checks if the solenoid is still enabled. If it is, disables the
-        solenoid current and sets the solenoid current target to zero.
-        Emits the window_closed Signal.
+        Creates a list of gui creation methods to call depending on which
+        channels are in self.occupied_channels.
+        Initializes the current_stage_index to zero.
+        Calls the load_current_stage method.
         """
-        if self.get_hv_enable_state() is True:
-            print('Turning off HV.')
-            self.hvps.disable_high_voltage()
-            self.hvps.set_voltage(self.channel, '0')
-        if self.get_sol_enable_state() is True:
-            print('Turning off current.')
-            self.hvps.disable_solenoid_current()
-            self.hvps.set_solenoid_current('0')
-        self.window_closed.emit()
-        super().closeEvent(event)
+        if 'BM' in self.occupied_channels:
+            self.test_stages.append(self.create_beam_test_gui)
+        if 'EX' in self.occupied_channels:
+            self.test_stages.append(self.create_ext_test_gui)
+        if 'L1' in self.occupied_channels:
+            self.test_stages.append(self.create_L1_test_gui)
+        if 'L2' in self.occupied_channels:
+            self.test_stages.append(self.create_L2_test_gui)
+        if 'L3' in self.occupied_channels:
+            self.test_stages.append(self.create_L3_test_gui)
+        if 'L4' in self.occupied_channels:
+            self.test_stages.append(self.create_L4_test_gui)
+        if 'SL' in self.occupied_channels:
+            self.test_stages.append(self.create_sol_test_gui)
+        self.current_stage_index: int = 0
+        self.load_current_stage()
+
+    def load_current_stage(self) -> None:
+        """
+        Clears the window layout and calls the test stage at the current stage index
+        When all of the test have been completed, the test_complete Signal is emitted
+        and the window is closed.
+        """
+        if self.current_stage_index < len(self.test_stages):
+            if self.back_button_pressed:  # if loading due to back_btn clicked
+                self.clear_layout([self.back_next_layout, self.main_layout])
+            if (
+                self.current_stage_index > 0 and not self.back_button_pressed
+            ):  # if loading due to next_btn clicked
+                self.clear_layout([self.back_next_layout, self.main_layout])
+            self.test_stages[self.current_stage_index]()
+        else:
+            self.test_complete.emit(self.readbacks, self.measurements)
+            self.close()
+
+    def clear_layout(self, layouts: list[QLayout]) -> None:
+        """
+        Removes all widgets from the provided layouts.
+
+        Args:
+            layouts (list[QLayout]): A list of layout objects to clear.
+        """
+        for layout in layouts:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.setParent(None)
+                    widget.deleteLater()
 
     def get_hv_enable_state(self) -> bool:
         """
@@ -143,63 +182,25 @@ class HVPSTestWindow(QMainWindow):
             return False
         return True
 
-    def clear_layout(self, layouts: list[QLayout]) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         """
-        Removes all widgets from the provided layouts.
-
-        Args:
-            layouts (list[QLayout]): A list of layout objects to clear.
+        Handles what happens when the window closes.
+        Checks if the HV is still enabled. If it is, disables HV and sets
+        the target of the current channel to zero.
+        Checks if the solenoid is still enabled. If it is, disables the
+        solenoid current and sets the solenoid current target to zero.
+        Emits the window_closed Signal.
         """
-        for layout in layouts:
-            while layout.count():
-                item = layout.takeAt(0)
-                widget = item.widget()
-                if widget is not None:
-                    widget.setParent(None)
-                    widget.deleteLater()
-
-    def test_plan(self) -> None:
-        """
-        Creates a list of gui creation methods to call depending on which
-        channels are in self.occupied_channels.
-        Initializes the current_stage_index to zero.
-        Calls the load_current_stage method.
-        """
-        if 'BM' in self.occupied_channels:
-            self.test_stages.append(self.create_beam_test_gui)
-        if 'EX' in self.occupied_channels:
-            self.test_stages.append(self.create_ext_test_gui)
-        if 'L1' in self.occupied_channels:
-            self.test_stages.append(self.create_L1_test_gui)
-        if 'L2' in self.occupied_channels:
-            self.test_stages.append(self.create_L2_test_gui)
-        if 'L3' in self.occupied_channels:
-            self.test_stages.append(self.create_L3_test_gui)
-        if 'L4' in self.occupied_channels:
-            self.test_stages.append(self.create_L4_test_gui)
-        if 'SL' in self.occupied_channels:
-            self.test_stages.append(self.create_sol_test_gui)
-        self.current_stage_index: int = 0
-        self.load_current_stage()
-
-    def load_current_stage(self) -> None:
-        """
-        If the current_stage_index is less than the length of the test_stages list,
-        clears the layout then calls the gui creator method at the current_stage_index.
-        If current_stage_index is greater than the length of the test_stages list,
-        emits the test_complete signal and closes the window.
-        """
-        if self.current_stage_index < len(self.test_stages):
-            if self.back_button_pressed:  # if loading due to back_btn clicked
-                self.clear_layout([self.back_next_layout, self.main_layout])
-            if (
-                self.current_stage_index > 0 and not self.back_button_pressed
-            ):  # if loading due to next_btn clicked
-                self.clear_layout([self.back_next_layout, self.main_layout])
-            self.test_stages[self.current_stage_index]()
-        else:
-            self.test_complete.emit(self.readbacks, self.measurements)
-            self.close()
+        if self.get_hv_enable_state() is True:
+            print('Turning off HV.')
+            self.hvps.disable_high_voltage()
+            self.hvps.set_voltage(self.channel, '0')
+        if self.get_sol_enable_state() is True:
+            print('Turning off current.')
+            self.hvps.disable_solenoid_current()
+            self.hvps.set_solenoid_current('0')
+        self.window_closed.emit()
+        super().closeEvent(event)
 
     ####################################################################################
     ############################ Create the GUI windows ################################
@@ -279,7 +280,7 @@ class HVPSTestWindow(QMainWindow):
         for line_edit, measurement in zip(
             self.line_edits, self.measurements[self.channel]
         ):
-            if measurement in ['unmeasured', 'N/A']:
+            if measurement in ['unmeasured', 'N/I']:
                 continue
             else:
                 line_edit.setText(measurement)
@@ -350,6 +351,7 @@ class HVPSTestWindow(QMainWindow):
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
 
+        # Set the layout
         self.back_next_layout = QGridLayout()
         self.back_next_layout.addWidget(self.back_btn, 0, 0)
         self.back_next_layout.addWidget(self.next_btn, 0, 1)
@@ -457,7 +459,7 @@ class HVPSTestWindow(QMainWindow):
         for line_edit, measurement in zip(
             self.line_edits, self.measurements[self.channel]
         ):
-            if measurement in ['unmeasured', 'N/A']:
+            if measurement in ['unmeasured', 'N/I']:
                 continue
             else:
                 line_edit.setText(measurement)
@@ -524,6 +526,7 @@ class HVPSTestWindow(QMainWindow):
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
 
+        # Set the layout
         self.back_next_layout = QGridLayout()
         self.back_next_layout.addWidget(self.back_btn, 0, 0)
         self.back_next_layout.addWidget(self.next_btn, 0, 1)
@@ -631,7 +634,7 @@ class HVPSTestWindow(QMainWindow):
         for line_edit, measurement in zip(
             self.line_edits, self.measurements[self.channel]
         ):
-            if measurement in ['unmeasured', 'N/A']:
+            if measurement in ['unmeasured', 'N/I']:
                 continue
             else:
                 line_edit.setText(measurement)
@@ -698,6 +701,7 @@ class HVPSTestWindow(QMainWindow):
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
 
+        # Set the layout
         self.back_next_layout = QGridLayout()
         self.back_next_layout.addWidget(self.back_btn, 0, 0)
         self.back_next_layout.addWidget(self.next_btn, 0, 1)
@@ -805,7 +809,7 @@ class HVPSTestWindow(QMainWindow):
         for line_edit, measurement in zip(
             self.line_edits, self.measurements[self.channel]
         ):
-            if measurement in ['unmeasured', 'N/A']:
+            if measurement in ['unmeasured', 'N/I']:
                 continue
             else:
                 line_edit.setText(measurement)
@@ -872,6 +876,7 @@ class HVPSTestWindow(QMainWindow):
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
 
+        # Set the layout
         self.back_next_layout = QGridLayout()
         self.back_next_layout.addWidget(self.back_btn, 0, 0)
         self.back_next_layout.addWidget(self.next_btn, 0, 1)
@@ -979,7 +984,7 @@ class HVPSTestWindow(QMainWindow):
         for line_edit, measurement in zip(
             self.line_edits, self.measurements[self.channel]
         ):
-            if measurement in ['unmeasured', 'N/A']:
+            if measurement in ['unmeasured', 'N/I']:
                 continue
             else:
                 line_edit.setText(measurement)
@@ -1046,6 +1051,7 @@ class HVPSTestWindow(QMainWindow):
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
 
+        # Set the layout
         self.back_next_layout = QGridLayout()
         self.back_next_layout.addWidget(self.back_btn, 0, 0)
         self.back_next_layout.addWidget(self.next_btn, 0, 1)
@@ -1153,7 +1159,7 @@ class HVPSTestWindow(QMainWindow):
         for line_edit, measurement in zip(
             self.line_edits, self.measurements[self.channel]
         ):
-            if measurement in ['unmeasured', 'N/A']:
+            if measurement in ['unmeasured', 'N/I']:
                 continue
             else:
                 line_edit.setText(measurement)
@@ -1220,6 +1226,7 @@ class HVPSTestWindow(QMainWindow):
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
 
+        # Set the layout
         self.back_next_layout = QGridLayout()
         self.back_next_layout.addWidget(self.back_btn, 0, 0)
         self.back_next_layout.addWidget(self.next_btn, 0, 1)
@@ -1314,11 +1321,11 @@ class HVPSTestWindow(QMainWindow):
             self.current3_measurement,
         ]
 
-        # Set the text of the QLineEdits
+        # Set the text of the QLineEdits if there is already an entry
         for line_edit, measurement in zip(
             self.line_edits, self.measurements[self.channel]
         ):
-            if measurement in ['unmeasured', 'N/A']:
+            if measurement in ['unmeasured', 'N/I']:
                 continue
             else:
                 line_edit.setText(measurement)
@@ -1362,6 +1369,7 @@ class HVPSTestWindow(QMainWindow):
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
 
+        # Set the layout
         self.back_next_layout = QGridLayout()
         self.back_next_layout.addWidget(self.back_btn, 0, 0)
         self.back_next_layout.addWidget(self.next_btn, 0, 1)
@@ -1378,9 +1386,7 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.current3_measurement, 4, 1)
         self.main_layout.addWidget(disable_sol_btn, 5, 0, 1, 2)
         self.main_layout.addLayout(self.back_next_layout, 6, 0, 1, 2)
-
         self.main_layout.addWidget(vertical_line, 0, 2, 7, 1)
-
         self.main_layout.addWidget(photo, 0, 3, 7, 1)
 
         container = QWidget()
@@ -1412,9 +1418,14 @@ class HVPSTestWindow(QMainWindow):
             self.hvps.disable_solenoid_current()
 
     def handle_back_btn(self) -> None:
-        print(f'{self.measurements = }')
-        print(f'{self.readbacks = }')
-        self.back_button_pressed = True
+        """
+        Sets the back_button_pressed flag to True
+        If the HV is on, turn it off and set the channel HV target to zero.
+        If the solenoid is on, turn it off and set the solenoid current target to zero.
+        Decreases the current stage index.
+        Calls load_current_stage method.
+        """
+        self.back_button_pressed = True  # Flag
         if self.get_hv_enable_state() is True:
             self.hvps.disable_high_voltage()
             self.hvps.set_voltage(self.channel, '0')
@@ -1427,14 +1438,11 @@ class HVPSTestWindow(QMainWindow):
 
     def handle_next_btn(self) -> None:
         """
-        If the HV is on, turn it off and set the current channel HV target to zero.
+        If the HV is on, turn it off and set the channel HV target to zero.
         If the solenoid is on, turn it off and set the solenoid current target to zero.
-        Adds the channel measurements to the measurements dictionary
-        Adds the channel readbacks to the readbacks dictionary
+        Increases the current stage index.
         Calls load_current_stage method.
         """
-        print(f'{self.measurements = }')
-        print(f'{self.readbacks = }')
         if self.get_hv_enable_state() is True:
             self.hvps.disable_high_voltage()
             self.hvps.set_voltage(self.channel, '0')
@@ -1481,12 +1489,14 @@ class HVPSTestWindow(QMainWindow):
             else:
                 button.setEnabled(False)
 
-        # Enable and set the voltage
+        # Set the voltage target
         voltage: str = self.test_voltages[0]  # '100'
+        self.hvps.set_voltage(self.channel, voltage)
+
+        # Enable the high voltage
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
             self.hvps.enable_high_voltage()
-        self.hvps.set_voltage(self.channel, voltage)
 
     def handle_test_pos_500V_btn(self) -> None:
         """
@@ -1520,12 +1530,14 @@ class HVPSTestWindow(QMainWindow):
             else:
                 button.setEnabled(False)
 
-        # Enable and set the voltage
+        # Set the voltage target
         voltage: str = self.test_voltages[1]  # '500'
+        self.hvps.set_voltage(self.channel, voltage)
+
+        # Enable the high voltage
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
             self.hvps.enable_high_voltage()
-        self.hvps.set_voltage(self.channel, voltage)
 
     def handle_test_pos_1kV_btn(self) -> None:
         """
@@ -1559,12 +1571,14 @@ class HVPSTestWindow(QMainWindow):
             else:
                 button.setEnabled(False)
 
-        # Enable and set the voltage
+        # Set the voltage target
         voltage: str = self.test_voltages[2]  # '1000'
+        self.hvps.set_voltage(self.channel, voltage)
+
+        # Enable the high voltage
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
             self.hvps.enable_high_voltage()
-        self.hvps.set_voltage(self.channel, voltage)
 
     def handle_test_neg_100V_btn(self) -> None:
         """
@@ -1598,12 +1612,14 @@ class HVPSTestWindow(QMainWindow):
             else:
                 button.setEnabled(False)
 
-        # Enable and set the voltage
+        # Set the target voltage
         voltage: str = f'-{self.test_voltages[0]}'  # '-100'
+        self.hvps.set_voltage(self.channel, voltage)
+
+        # Enable the high voltage
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
             self.hvps.enable_high_voltage()
-        self.hvps.set_voltage(self.channel, voltage)
 
     def handle_test_neg_500V_btn(self) -> None:
         """
@@ -1637,12 +1653,14 @@ class HVPSTestWindow(QMainWindow):
             else:
                 button.setEnabled(False)
 
-        # Enable and set the voltage
+        # Set the target voltage
         voltage: str = f'-{self.test_voltages[1]}'  # '-500'
+        self.hvps.set_voltage(self.channel, voltage)
+
+        # Enable the high voltage
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
             self.hvps.enable_high_voltage()
-        self.hvps.set_voltage(self.channel, voltage)
 
     def handle_test_neg_1kV_btn(self) -> None:
         """
@@ -1676,12 +1694,14 @@ class HVPSTestWindow(QMainWindow):
             else:
                 button.setEnabled(False)
 
-        # Enable and set the voltage
+        # Set the target voltage
         voltage: str = f'-{self.test_voltages[2]}'  # '-1000'
+        self.hvps.set_voltage(self.channel, voltage)
+
+        # Enable the high voltage
         hv_enabled: bool = self.get_hv_enable_state()
         if not hv_enabled:
             self.hvps.enable_high_voltage()
-        self.hvps.set_voltage(self.channel, voltage)
 
     ####################################################################################
     ################# Create the handlers for the current test buttons #################
@@ -1691,118 +1711,232 @@ class HVPSTestWindow(QMainWindow):
         """
         Tests the solenoid at 0.3 A
         """
+
+        # Enable the QLineEdit
         self.current1_measurement.setEnabled(True)
         self.current1_measurement.setFocus()
+
+        # Set the target current
         current: str = self.test_currents[0]  # '0.3'
+        self.hvps.set_solenoid_current(current)
+
+        # Enable the current
         sol_enabled: bool = self.get_sol_enable_state()
         if not sol_enabled:
             self.hvps.enable_solenoid_current()
-        self.hvps.set_solenoid_current(current)
 
     def handle_test_sol_current2_btn(self) -> None:
         """
         Tests the solenoid at 1.2 A
         """
+
+        # Enable the QLineEdit
         self.current2_measurement.setEnabled(True)
         self.current2_measurement.setFocus()
+
+        # Set the target current
         current: str = self.test_currents[1]  # '1.2'
+        self.hvps.set_solenoid_current(current)
+
+        # Enable the current
         sol_enabled: bool = self.get_sol_enable_state()
         if not sol_enabled:
             self.hvps.enable_solenoid_current()
-        self.hvps.set_solenoid_current(current)
 
     def handle_test_sol_current3_btn(self) -> None:
         """
         Tests the solenoid at 2.5 A
         """
+
+        # Enable the QLineEdit
         self.current3_measurement.setEnabled(True)
         self.current3_measurement.setFocus()
+
+        # Set the target current
         current: str = self.test_currents[2]  # '2.5'
+        self.hvps.set_solenoid_current(current)
+
+        # Enable the current
         sol_enabled: bool = self.get_sol_enable_state()
         if not sol_enabled:
             self.hvps.enable_solenoid_current()
-        self.hvps.set_solenoid_current(current)
 
     ####################################################################################
     ### Create the handlers for returnPressed on QLineEdits for voltage measurements ###
     ####################################################################################
 
     def handle_pos_100V_entered(self, line_edit: QLineEdit) -> None:
+        """
+        Enters the readback and measurement data for the 100 V test
+        """
+        # Get the readback and measurement input values
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = line_edit.text()
+
+        # Update the readback and measurement dicts with the values
         self.readbacks[self.channel][0] = readback
         self.measurements[self.channel][0] = measurement
+
+        # Disable the QLineEdit and clear the focus
         line_edit.setEnabled(False)
         line_edit.clearFocus()
+
+        # Set the target voltage to zero
         self.hvps.set_voltage(self.channel, '0')
+
+        # Disable the high voltage
         self.hvps.disable_high_voltage()
+
+        # Re-enable the test buttons
         for button in self.hv_buttons:
             button.setEnabled(True)
+
+        # Set the focus to the next button down the list
         self.test_pos_500V_btn.setFocus()
 
     def handle_pos_500V_entered(self, line_edit: QLineEdit) -> None:
+        """
+        Enters the readback and measurement data for the 500 V test
+        """
+        # Get the readback and measurement input values
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = line_edit.text()
+
+        # Update the readback and measurement dicts with the values
         self.readbacks[self.channel][1] = readback
         self.measurements[self.channel][1] = measurement
+
+        # Disable the QLineEdit and clear the focus
         line_edit.setEnabled(False)
         line_edit.clearFocus()
+
+        # Set the target voltage to zero
         self.hvps.set_voltage(self.channel, '0')
+
+        # Disable the high voltage
         self.hvps.disable_high_voltage()
+
+        # Re-enable the test buttons
         for button in self.hv_buttons:
             button.setEnabled(True)
+
+        # Set the focus to the next button down the list
         self.test_pos_1kV_btn.setFocus()
 
     def handle_pos_1kV_entered(self, line_edit: QLineEdit) -> None:
+        """
+        Enters the readback and measurement data for the 1 kV test
+        """
+        # Get the readback and measurement input values
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = line_edit.text()
+
+        # Update the readback and measurement dicts with the values
         self.readbacks[self.channel][2] = readback
         self.measurements[self.channel][2] = measurement
+
+        # Disable the QLineEdit and clear the focus
         line_edit.setEnabled(False)
         line_edit.clearFocus()
+
+        # Set the target voltage to zero
         self.hvps.set_voltage(self.channel, '0')
+
+        # Disable the high voltage
         self.hvps.disable_high_voltage()
+
+        # Re-enable the test buttons
         for button in self.hv_buttons:
             button.setEnabled(True)
+
+        # Set the focus to the next button down the list
         self.test_neg_100V_btn.setFocus()
 
     def handle_neg_100V_entered(self, line_edit: QLineEdit) -> None:
+        """
+        Enters the readback and measurement data for the -100 V test
+        """
+        # Get the readback and measurement input values
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = line_edit.text()
+
+        # Update the readback and measurement dicts with the values
         self.readbacks[self.channel][3] = readback
         self.measurements[self.channel][3] = measurement
+
+        # Disable the QLineEdit and clear the focus
         line_edit.setEnabled(False)
         line_edit.clearFocus()
+
+        # Set the target voltage to zero
         self.hvps.set_voltage(self.channel, '0')
+
+        # Disable the high voltage
         self.hvps.disable_high_voltage()
+
+        # Re-enable the test buttons
         for button in self.hv_buttons:
             button.setEnabled(True)
+
+        # Set the focus to the next button down the list
         self.test_neg_500V_btn.setFocus()
 
     def handle_neg_500V_entered(self, line_edit: QLineEdit) -> None:
+        """
+        Enters the readback and measurement data for the -500 V test
+        """
+        # Get the readback and measurement input values
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = line_edit.text()
+
+        # Update the readback and measurement dicts with the values
         self.readbacks[self.channel][4] = readback
         self.measurements[self.channel][4] = measurement
+
+        # Disable the QLineEdit and clear the focus
         line_edit.setEnabled(False)
         line_edit.clearFocus()
+
+        # Set the target voltage to zero
         self.hvps.set_voltage(self.channel, '0')
+
+        # Disable the high voltage
         self.hvps.disable_high_voltage()
+
+        # Re-enable the test buttons
         for button in self.hv_buttons:
             button.setEnabled(True)
+
+        # Set the focus to the next button down the list
         self.test_neg_1kV_btn.setFocus()
 
     def handle_neg_1kV_entered(self, line_edit: QLineEdit) -> None:
+        """
+        Enters the readback and measurement data for the -1 kV test
+        """
+        # Get the readback and measurement input values
         readback: str = self.hvps.get_voltage(self.channel)
         measurement: str = line_edit.text()
+
+        # Update the readback and measurement dicts with the values
         self.readbacks[self.channel][5] = readback
         self.measurements[self.channel][5] = measurement
+
+        # Disable the QLineEdit and clear the focus
         line_edit.setEnabled(False)
         line_edit.clearFocus()
+
+        # Set the target voltage to zero
         self.hvps.set_voltage(self.channel, '0')
+
+        # Disable the high voltage
         self.hvps.disable_high_voltage()
+
+        # Re-enable the test buttons
         for button in self.hv_buttons:
             button.setEnabled(True)
+
+        # Set the focus to the `Next` button
         self.next_btn.setFocus()
 
     ####################################################################################
@@ -1810,67 +1944,115 @@ class HVPSTestWindow(QMainWindow):
     ####################################################################################
 
     def handle_current1_entered(self) -> None:
+        """
+        Enters the readback and measurement data for the 0.3 A test
+        """
+        # Get the readback and measurement input value
         readback: str = self.hvps.get_current(self.channel)
         measurement: str = self.current1_measurement.text()
+
+        # Update the readback and measurement dicts with the values
         self.readbacks[self.channel][0] = readback
         self.measurements[self.channel][0] = measurement
+
+        # Disable the QLineEdit and clear the focus
         self.current1_measurement.setEnabled(False)
         self.current1_measurement.clearFocus()
+
+        # Set the target current to zero
         self.hvps.set_solenoid_current('0')
+
+        # Disable the current
         self.hvps.disable_solenoid_current()
+
+        # Re-enable the test buttons
         for button in self.current_buttons:
             button.setEnabled(True)
+
+        # Set the focus to the next button down the list
         self.current2_btn.setFocus()
 
     def handle_current2_entered(self) -> None:
+        """
+        Enters the readback and measurement data for the 1.2 A test
+        """
+        # Get the readback and measurement input values
         readback: str = self.hvps.get_current(self.channel)
         measurement: str = self.current2_measurement.text()
+
+        # Update the readback and measurement dicts with the values
         self.readbacks[self.channel][1] = readback
         self.measurements[self.channel][1] = measurement
+
+        # Disable the QLineEdit and clear the focus
         self.current2_measurement.setEnabled(False)
         self.current2_measurement.clearFocus()
+
+        # Set the target current to zero
         self.hvps.set_solenoid_current('0')
+
+        # Disable the current
         self.hvps.disable_solenoid_current()
+
+        # Re-enable the test buttons
         for button in self.current_buttons:
             button.setEnabled(True)
+
+        # Set the focus to the next button down the list
         self.current3_btn.setFocus()
 
     def handle_current3_entered(self) -> None:
+        """
+        Enters the readback and measurement data for the 2.5 A test
+        """
+        # Get the readback and measurement input values
         readback: str = self.hvps.get_current(self.channel)
         measurement: str = self.current3_measurement.text()
+
+        # Update the readback and measurement dicts with the values
         self.readbacks[self.channel][2] = readback
         self.measurements[self.channel][2] = measurement
+
+        # Disable the QLineEdit and clear the focus
         self.current3_measurement.setEnabled(False)
         self.current3_measurement.clearFocus()
+
+        # Set the target current to zero
         self.hvps.set_solenoid_current('0')
+
+        # Disable the current
         self.hvps.disable_solenoid_current()
+
+        # Re-enable the test buttons
         for button in self.current_buttons:
             button.setEnabled(True)
+
+        # Set the focus to the `Next` button
         self.next_btn.setFocus()
 
 
-if __name__ == '__main__':
-    import sys
+# if __name__ == '__main__':
+#     import sys
 
-    from PySide6.QtWidgets import QApplication
+#     from PySide6.QtWidgets import QApplication
 
-    from src.pdf import HVPSReport
+#     from src.pdf import HVPSReport
 
-    def create_pdf(readbacks, measurements):
-        pdf = HVPSReport(
-            'SN-###',
-            ['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
-            readbacks,
-            measurements,
-        )
-        pdf.open()
+#     def create_pdf(readbacks, measurements):
+#         pdf = HVPSReport(
+#             'SN-###',
+#             ['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
+#             readbacks,
+#             measurements,
+#         )
+#         pdf.open()
 
-    version = '1.0.0'
-    app = QApplication([])
-    window = HVPSTestWindow(
-        hvps=HVPSv3(sock=None),
-        occupied_channels=['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
-    )
-    window.test_complete.connect(create_pdf)
-    window.show()
-    sys.exit(app.exec())
+#     version = '1.0.0'
+#     app = QApplication([])
+#     window = HVPSTestWindow(
+#         hvps=HVPSv3(sock=None),
+#         occupied_channels=['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
+#     )
+#     window.test_complete.connect(create_pdf)
+#     window.show()
+#     sys.exit(app.exec())
