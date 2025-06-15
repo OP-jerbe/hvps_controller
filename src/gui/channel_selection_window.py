@@ -1,5 +1,4 @@
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -11,13 +10,14 @@ from PySide6.QtWidgets import (
 
 class ChannelSelectionWindow(QDialog):
     """
-    Creates a gui window that will allow the user to select which channels
-    are installed into the HVPSv3. Emits a Signal with list of occupied channels.
+    Creates a gui window that will allow the user to input the serial number of
+    the HVPS and to select which channels are installed into the HVPSv3.  Emits
+    two Signals one with the serial number and another with a list of occupied
+    channels.
     """
 
     channels_selected = Signal(list)
     serial_number_entered = Signal(str)
-    window_closed = Signal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -31,7 +31,8 @@ class ChannelSelectionWindow(QDialog):
     def create_gui(self) -> None:
         """
         Creates the checkbox widgets for the user to select which channels
-        are occupied in the HVPS.
+        are occupied in the HVPS. Also provides a QLineEdit to input the
+        serial number of the HVPS being controlled.
         """
         window_width = 280
         window_height = 200
@@ -69,7 +70,7 @@ class ChannelSelectionWindow(QDialog):
             sol_channel_chbx: 'SL',
         }
 
-        # Create the `Ok`` button
+        # Create the `Ok` button
         channel_select_btn = QPushButton('Ok')
         channel_select_btn.clicked.connect(self.handle_ok_btn_clicked)
 
@@ -97,7 +98,3 @@ class ChannelSelectionWindow(QDialog):
         self.channels_selected.emit(self.occupied_channels)
         self.serial_number_entered.emit(self.serial_number)
         self.close()
-
-    def closeEvent(self, event: QCloseEvent) -> None:
-        self.window_closed.emit()
-        super().closeEvent(event)
