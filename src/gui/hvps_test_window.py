@@ -45,7 +45,7 @@ class HVPSTestWindow(QMainWindow):
         self.test_stages: list[Callable] = []
 
         # Make pre-populated dictionaries to hold the readback and measurement data
-        # 'N/I' is used
+        # 'N/I' stands for 'Not Installed'
         self.readbacks: dict[str, list[str]] = {
             'BM': ['N/I'] * 6,
             'EX': ['N/I'] * 6,
