@@ -120,7 +120,7 @@ class MainWindow(QMainWindow):
             self.sol_Ireadback,
         )
 
-        # Create the attributes that will hold the channel settings
+        # Create the attributes that will hold the voltage/current settings
         self.beam_setting: str = '0'
         self.ext_setting: str = '0'
         self.L1_setting: str = '0'
@@ -139,11 +139,15 @@ class MainWindow(QMainWindow):
         )
 
         # Create the dicts that will hold the test readbacks and measurements for the report
-        self.test_readbacks: dict[str, list[str]] = {}
-        self.test_measurements: dict[str, list[str]] = {}
+        self.test_report_readbacks: dict[str, list[str]] = {}
+        self.test_report_measurements: dict[str, list[str]] = {}
 
         self.create_gui()
         QTimer.singleShot(0, self.open_channel_selection_window)
+
+    ####################################################################################
+    ##################### Channel Selection Window Methods #############################
+    ####################################################################################
 
     def open_channel_selection_window(self) -> None:
         self.channel_selection_window = ChannelSelectionWindow(self)
@@ -153,67 +157,17 @@ class MainWindow(QMainWindow):
         self.channel_selection_window.serial_number_entered.connect(
             self.get_serial_number
         )
-        self.channel_selection_window.window_closed.connect(
-            self.channel_selection_window_closed_event
-        )
         self.channel_selection_window.exec()
-
-    def get_occupied_channels(self, occupied_channels: list[str]) -> None:
-        self.occupied_channels = occupied_channels
 
     def get_serial_number(self, serial_number: str) -> None:
         self.serial_number = serial_number
 
-    def channel_selection_window_closed_event(self) -> None:
-        print('Channel Selection Window Closed')
-        print(f'{self.occupied_channels = }')
+    def get_occupied_channels(self, occupied_channels: list[str]) -> None:
+        self.occupied_channels = occupied_channels
 
-    def update_readings(self) -> None:
-        """
-        Updates the QLabels to show the readback values from the HVPS.
-        """
-
-        # Return if self.hvps is None
-        if not self.hvps:
-            return
-
-        # Get the voltage and current readbacks from the HVPSv3 and set the QLabel
-        # text in the gui.
-        for (
-            channel,
-            v_readback,
-            i_readback,
-            v_readback_label,
-            i_readback_label,
-        ) in zip(
-            self.hvps.all_channels,
-            self.voltage_readbacks,
-            self.current_readbacks,
-            self.Vreadback_labels,
-            self.Ireadback_labels,
-        ):
-            # Get the voltage and current readbacks from the HVPS
-            v_readback = self.hvps.get_voltage(channel)
-            i_readback = self.hvps.get_current(channel)
-
-            # Slice the readbacks starting at the 4 character and remove extra spaces.
-            # i.e. "L1V  100" becomes "100"
-            v_readback = v_readback[3:].strip()
-            i_readback = i_readback[3:].strip()
-
-            # Turn the current readback into a float
-            i_readback = float(i_readback)
-
-            # Turn the voltage readback into an int or float and set the readback labels
-            if channel != 'SL':
-                v_readback = int(v_readback)
-                v_readback_label.setText(f'{v_readback} V')
-                i_readback_label.setText(f'{i_readback:.2f} uA')
-
-            else:
-                v_readback = float(v_readback)
-                v_readback_label.setText(f'{v_readback:.2f} V')
-                i_readback_label.setText(f'{i_readback:.2f} A')
+    ####################################################################################
+    ###################### Main Window GUI Display Methods #############################
+    ####################################################################################
 
     def create_gui(self) -> None:
         window_width = 330
@@ -474,6 +428,57 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(container)
 
+    def update_readings(self) -> None:
+        """
+        Updates the QLabels to show the readback values from the HVPS.
+        """
+
+        # Return if self.hvps is None
+        if not self.hvps:
+            return
+
+        # Get the voltage and current readbacks from the HVPSv3 and set the QLabel
+        # text in the gui.
+        for (
+            channel,
+            v_readback,
+            i_readback,
+            v_readback_label,
+            i_readback_label,
+        ) in zip(
+            self.hvps.all_channels,
+            self.voltage_readbacks,
+            self.current_readbacks,
+            self.Vreadback_labels,
+            self.Ireadback_labels,
+        ):
+            # Get the voltage and current readbacks from the HVPS
+            v_readback = self.hvps.get_voltage(channel)
+            i_readback = self.hvps.get_current(channel)
+
+            # Slice the readbacks starting at the 4 character and remove extra spaces.
+            # i.e. "L1V  100" becomes "100"
+            v_readback = v_readback[3:].strip()
+            i_readback = i_readback[3:].strip()
+
+            # Turn the current readback into a float
+            i_readback = float(i_readback)
+
+            # Turn the voltage readback into an int or float and set the readback labels
+            if channel != 'SL':
+                v_readback = int(v_readback)
+                v_readback_label.setText(f'{v_readback} V')
+                i_readback_label.setText(f'{i_readback:.2f} uA')
+
+            else:
+                v_readback = float(v_readback)
+                v_readback_label.setText(f'{v_readback:.2f} V')
+                i_readback_label.setText(f'{i_readback:.2f} A')
+
+    ####################################################################################
+    ####################### Connect to HVPS Menu Option Methods ########################
+    ####################################################################################
+
     def handle_open_socket_window(self) -> None:
         """
         Opens a window with `IP` and `PORT` QLineEdits, populated with
@@ -517,6 +522,10 @@ class MainWindow(QMainWindow):
         self.ip = ip
         self.port = port
 
+    ####################################################################################
+    ########################## Test HVPS Menu Option Methods ###########################
+    ####################################################################################
+
     def handle_run_test(self) -> None:
         """
         Handles what happens when the user selects the "Run Test" option from the File menu.
@@ -557,6 +566,58 @@ class MainWindow(QMainWindow):
             self.enable_IO_btns(False)
             self.hvps_test_window.show()
 
+    def handle_hvps_test_complete(
+        self,
+        readbacks: dict[str, list[str]],
+        measurements: dict[str, list[str]],
+    ) -> None:
+        """
+        Handles what happens when the HVPS test has completes successfully.
+        Gets the emitted Signal and sets the variables for occupied_channels,
+        test_readbacks, and test_measurements.
+        Shows a message box that lets the user know the test is finished
+        and asks if they want to print a test report.
+        """
+        self.test_report_readbacks = readbacks
+        self.test_report_measurements = measurements
+
+        title = 'Test Complete'
+        text = 'HVPS test complete.\nWould you like to print a test report?'
+        buttons = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        result = QMessageBox.question(self, title, text, buttons)
+
+        if result == QMessageBox.StandardButton.Yes:
+            test_report_pdf = HVPSReport(
+                serial_number=self.serial_number,
+                occupied_channels=self.occupied_channels,
+                readbacks=self.test_report_readbacks,
+                measurements=self.test_report_measurements,
+            )
+            test_report_pdf.open()
+
+    def handle_test_hvps_window_closed(self) -> None:
+        """
+        Handles what happens when the HVPSTestWindow is closed.
+        Sets the object variable to None.
+        """
+        self.hvps_test_window = None
+        self.enable_entries(True)
+        self.enable_IO_btns(True)
+
+    ####################################################################################
+    ########################## User Guide Menu Option Method ###########################
+    ####################################################################################
+
+    def open_user_guide(self) -> None:
+        """
+        Open the user guide HTML
+        """
+        print(get_root_dir())
+
+    ####################################################################################
+    ################################ Utility Methods ###################################
+    ####################################################################################
+
     def enable_entries(self, enable: bool) -> None:
         """
         Enables or disables the QLineEdits used for setting the voltages and solenoid current
@@ -573,50 +634,6 @@ class MainWindow(QMainWindow):
             self.hv_enable_btn.setText('OFF')
             self.sol_enable_btn.setChecked(False)
             self.sol_enable_btn.setText('OFF')
-
-    def handle_hvps_test_complete(
-        self,
-        readbacks: dict[str, list[str]],
-        measurements: dict[str, list[str]],
-    ) -> None:
-        """
-        Handles what happens when the HVPS test has completes successfully.
-        Gets the emitted Signal and sets the variables for occupied_channels,
-        test_readbacks, and test_measurements.
-        Shows a message box that lets the user know the test is finished
-        and asks if they want to print a test report.
-        """
-        self.test_readbacks = readbacks
-        self.test_measurements = measurements
-
-        title = 'Test Complete'
-        text = 'HVPS test complete.\nWould you like to print a test report?'
-        buttons = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        result = QMessageBox.question(self, title, text, buttons)
-
-        if result == QMessageBox.StandardButton.Yes:
-            test_report_pdf = HVPSReport(
-                serial_number=self.serial_number,
-                occupied_channels=self.occupied_channels,
-                readbacks=self.test_readbacks,
-                measurements=self.test_measurements,
-            )
-            test_report_pdf.open()
-
-    def handle_test_hvps_window_closed(self) -> None:
-        """
-        Handles what happens when the HVPSTestWindow is closed.
-        Sets the object variable to None.
-        """
-        self.hvps_test_window = None
-        self.enable_entries(True)
-        self.enable_IO_btns(True)
-
-    def open_user_guide(self) -> None:
-        """
-        Open the user guide HTML
-        """
-        print(get_root_dir())
 
     def handle_hv_enable_btn(self) -> None:
         """
@@ -653,36 +670,6 @@ class MainWindow(QMainWindow):
                 self.hvps.enable_solenoid_current()
                 self.hvps.set_solenoid_current(self.sol_setting)
 
-    def handle_exit(self) -> None:
-        """
-        Quits the application
-        """
-        self.close()
-
-    def on_worker_stopped(self) -> None:
-        self.worker_thread.quit()
-        self.worker_thread.wait()
-        self._ready_to_quit = True
-        self.close()  # Now close safely
-
-    def closeEvent(self, event: QCloseEvent) -> None:
-        """
-        Handles what happens when the main window is closed.
-        If self._ready_to_quit is True, close the socket and accept the close event.
-        Otherwise, tell the worker to emit the `stop_requested` Signal which will
-        tell the thread to stop and then emit the `stopped` Signal which will trigger
-        the `on_worker_stopped` method which will terminate the thread and close
-        the window.
-        """
-        if self._ready_to_quit:
-            if self.sock:
-                close_socket(self.sock)
-            event.accept()
-        else:
-            self.worker.stop_requested.emit()
-            event.ignore()
-        super().closeEvent(event)
-
     def handle_return_pressed(self) -> None:
         focused_widget = self.focusWidget()
 
@@ -714,3 +701,37 @@ class MainWindow(QMainWindow):
                 self.hvps.set_voltage('SL', setting)
 
         focused_widget.clearFocus()
+
+    ####################################################################################
+    ############################ Close Main Window Methods #############################
+    ####################################################################################
+
+    def handle_exit(self) -> None:
+        """
+        Quits the application
+        """
+        self.close()
+
+    def on_worker_stopped(self) -> None:
+        self.worker_thread.quit()
+        self.worker_thread.wait()
+        self._ready_to_quit = True
+        self.close()  # Now close safely
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """
+        Handles what happens when the main window is closed.
+        If self._ready_to_quit is True, close the socket and accept the close event.
+        Otherwise, tell the worker to emit the `stop_requested` Signal which will
+        tell the thread to stop and then emit the `stopped` Signal which will trigger
+        the `on_worker_stopped` method which will terminate the thread and close
+        the window.
+        """
+        if self._ready_to_quit:
+            if self.sock:
+                close_socket(self.sock)
+            event.accept()
+        else:
+            self.worker.stop_requested.emit()
+            event.ignore()
+        super().closeEvent(event)
