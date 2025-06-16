@@ -19,11 +19,10 @@ TODO:
 
 def run_app(sock: Optional[SocketType]) -> NoReturn:
     """
-    Sets the version of application build,
-    creates the app and main window,
-    then executes the application event loop.
-    app.exec() == 0 when the event loop stops.
-    sys.exit(0) terminates the application.
+    Sets the version of application build, creates the app and main window, then
+    executes the application event loop. `app.exec() == 0` when the event loop
+    stops. `sys.exit(0)` terminates the application.
+
     """
     version = '1.0.0'
     app = QApplication([])
