@@ -88,7 +88,7 @@ class HVPSTestWindow(QMainWindow):
         # Create the main layout
         self.main_layout = QGridLayout()
 
-        # Call the first gui window where the user selects the occupied channels.
+        # Start the test plan.
         self.test_plan()
 
     def test_plan(self) -> None:
