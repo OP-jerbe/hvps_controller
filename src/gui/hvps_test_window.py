@@ -211,21 +211,21 @@ class HVPSTestWindow(QMainWindow):
         Creates the gui to test the beam channel
         """
         window_width = 1150
-        window_height = 600
+        window_height = 680
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Beam Channel Test')
         self.channel: str = 'BM'
 
         instructions: str = (
-            '1. Plug HV pigtail into Beam HV recepticle.\n'
-            '2. Attach positive lead of voltmeter to pigtail.\n'
-            '3. Attach common lead of voltmeter to ground.\n'
-            '4. Press one of the voltage test buttons, wait for the\n'
+            '1. Ensure interlock receptacle is jumpered.\n'
+            '2. Insert HV pigtail into Beam HV receptacle.\n'
+            '3. Connect HV pigtail banana plug in voltmeter\n'
+            '4. Attach common lead of voltmeter to ground lug.\n'
+            '5. Press one of the voltage test buttons, wait for the\n'
             '     voltage to ramp up and stabilize, then record the\n'
             '     measured value in the adjacent entry box.\n'
-            '5. Repeat this for each of the six voltage settings.\n'
-            '6. When complete, press the "Disable HV" button.\n'
-            '7. Click the "Next" button to continue.\n'
+            '6. Repeat this for each of the six voltage settings.\n'
+            '7. When complete, Click the "Next" button to continue.\n'
         )
 
         title_label = QLabel('Beam Test')
@@ -374,8 +374,8 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.beam_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
         self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
-        self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
-        self.main_layout.addWidget(photo, 0, 3, 9, 1)
+        self.main_layout.addWidget(vertical_line, 0, 2, 10, 1)
+        self.main_layout.addWidget(photo, 0, 3, 10, 1)
 
         container = QWidget()
         container.setLayout(self.main_layout)
@@ -390,21 +390,21 @@ class HVPSTestWindow(QMainWindow):
         Creates the gui to test the Extractor channel.
         """
         window_width = 1150
-        window_height = 600
+        window_height = 680
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Extractor Channel Test')
         self.channel = 'EX'
 
         instructions: str = (
-            '1. Plug HV pigtail into Extractor HV recepticle.\n'
-            '2. Attach positive lead of voltmeter to pigtail.\n'
-            '3. Attach common lead of voltmeter to ground.\n'
-            '4. Press one of the voltage test buttons, wait for the\n'
+            '1. Ensure interlock receptacle is jumpered.\n'
+            '2. Insert HV pigtail into Extractor HV receptacle.\n'
+            '3. Connect HV pigtail banana plug in voltmeter\n'
+            '4. Attach common lead of voltmeter to ground lug.\n'
+            '5. Press one of the voltage test buttons, wait for the\n'
             '     voltage to ramp up and stabilize, then record the\n'
             '     measured value in the adjacent entry box.\n'
-            '5. Repeat this for each of the six voltage settings.\n'
-            '6. When complete, press the "Disable HV" button.\n'
-            '7. Click the "Next" button to continue.\n'
+            '6. Repeat this for each of the six voltage settings.\n'
+            '7. When complete, Click the "Next" button to continue.\n'
         )
 
         title_label = QLabel('Ext. Test')
@@ -522,7 +522,7 @@ class HVPSTestWindow(QMainWindow):
 
         # Create the widget to hold the photo
         photo = QLabel()
-        photo_path: Path = self.root_dir / 'assets' / 'L1.jpg'
+        photo_path: Path = self.root_dir / 'assets' / 'ext.jpg'
         pixmap = QPixmap(photo_path)
         photo.setPixmap(pixmap)
 
@@ -549,8 +549,8 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.ext_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
         self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
-        self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
-        self.main_layout.addWidget(photo, 0, 3, 9, 1)
+        self.main_layout.addWidget(vertical_line, 0, 2, 10, 1)
+        self.main_layout.addWidget(photo, 0, 3, 10, 1)
 
         container = QWidget()
         container.setLayout(self.main_layout)
@@ -565,21 +565,21 @@ class HVPSTestWindow(QMainWindow):
         Creates the gui to test the Lens 1 channel
         """
         window_width = 1150
-        window_height = 600
+        window_height = 680
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 1 Channel Test')
         self.channel = 'L1'
 
         instructions: str = (
-            '1. Plug HV pigtail into Lens 1 HV recepticle.\n'
-            '2. Attach positive lead of voltmeter to pigtail.\n'
-            '3. Attach common lead of voltmeter to ground.\n'
-            '4. Press one of the voltage test buttons, wait for the\n'
+            '1. Ensure interlock receptacle is jumpered.\n'
+            '2. Insert HV pigtail into Lens 1 HV receptacle.\n'
+            '3. Connect HV pigtail banana plug in voltmeter\n'
+            '4. Attach common lead of voltmeter to ground lug.\n'
+            '5. Press one of the voltage test buttons, wait for the\n'
             '     voltage to ramp up and stabilize, then record the\n'
             '     measured value in the adjacent entry box.\n'
-            '5. Repeat this for each of the six voltage settings.\n'
-            '6. When complete, press the "Disable HV" button.\n'
-            '7. Click the "Next" button to continue.\n'
+            '6. Repeat this for each of the six voltage settings.\n'
+            '7. When complete, Click the "Next" button to continue.\n'
         )
 
         title_label = QLabel('Lens 1 Test')
@@ -724,8 +724,8 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L1_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
         self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
-        self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
-        self.main_layout.addWidget(photo, 0, 3, 9, 1)
+        self.main_layout.addWidget(vertical_line, 0, 2, 10, 1)
+        self.main_layout.addWidget(photo, 0, 3, 10, 1)
 
         container = QWidget()
         container.setLayout(self.main_layout)
@@ -740,21 +740,21 @@ class HVPSTestWindow(QMainWindow):
         Creates the gui to test the Lens 2 channel
         """
         window_width = 1150
-        window_height = 600
+        window_height = 680
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 2 Channel Test')
         self.channel = 'L2'
 
         instructions: str = (
-            '1. Plug HV pigtail into Lens 2 HV recepticle.\n'
-            '2. Attach positive lead of voltmeter to pigtail.\n'
-            '3. Attach common lead of voltmeter to ground.\n'
-            '4. Press one of the voltage test buttons, wait for the\n'
+            '1. Ensure interlock receptacle is jumpered.\n'
+            '2. Insert HV pigtail into Lens 2 HV receptacle.\n'
+            '3. Connect HV pigtail banana plug in voltmeter\n'
+            '4. Attach common lead of voltmeter to ground lug.\n'
+            '5. Press one of the voltage test buttons, wait for the\n'
             '     voltage to ramp up and stabilize, then record the\n'
             '     measured value in the adjacent entry box.\n'
-            '5. Repeat this for each of the six voltage settings.\n'
-            '6. When complete, press the "Disable HV" button.\n'
-            '7. Click the "Next" button to continue.\n'
+            '6. Repeat this for each of the six voltage settings.\n'
+            '7. When complete, Click the "Next" button to continue.\n'
         )
 
         title_label = QLabel('Lens 2 Test')
@@ -899,8 +899,8 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L2_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
         self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
-        self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
-        self.main_layout.addWidget(photo, 0, 3, 9, 1)
+        self.main_layout.addWidget(vertical_line, 0, 2, 10, 1)
+        self.main_layout.addWidget(photo, 0, 3, 10, 1)
 
         container = QWidget()
         container.setLayout(self.main_layout)
@@ -915,21 +915,21 @@ class HVPSTestWindow(QMainWindow):
         Creates the gui to test the Lens 3 channel
         """
         window_width = 1150
-        window_height = 600
+        window_height = 680
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 3 Channel Test')
         self.channel = 'L3'
 
         instructions: str = (
-            '1. Plug HV pigtail into Beam HV recepticle.\n'
-            '2. Attach positive lead of voltmeter to pigtail.\n'
-            '3. Attach common lead of voltmeter to ground.\n'
-            '4. Press one of the voltage test buttons, wait for the\n'
+            '1. Ensure interlock receptacle is jumpered.\n'
+            '2. Insert HV pigtail into Lens 3 HV receptacle.\n'
+            '3. Connect HV pigtail banana plug in voltmeter\n'
+            '4. Attach common lead of voltmeter to ground lug.\n'
+            '5. Press one of the voltage test buttons, wait for the\n'
             '     voltage to ramp up and stabilize, then record the\n'
             '     measured value in the adjacent entry box.\n'
-            '5. Repeat this for each of the six voltage settings.\n'
-            '6. When complete, press the "Disable HV" button.\n'
-            '7. Click the "Next" button to continue.\n'
+            '6. Repeat this for each of the six voltage settings.\n'
+            '7. When complete, Click the "Next" button to continue.\n'
         )
 
         title_label = QLabel('Lens 3 Test')
@@ -1074,8 +1074,8 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L3_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
         self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
-        self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
-        self.main_layout.addWidget(photo, 0, 3, 9, 1)
+        self.main_layout.addWidget(vertical_line, 0, 2, 10, 1)
+        self.main_layout.addWidget(photo, 0, 3, 10, 1)
 
         container = QWidget()
         container.setLayout(self.main_layout)
@@ -1090,21 +1090,21 @@ class HVPSTestWindow(QMainWindow):
         Creates the gui to test the Lens 4 channel
         """
         window_width = 1150
-        window_height = 600
+        window_height = 680
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Lens 4 Channel Test')
         self.channel = 'L4'
 
         instructions: str = (
-            '1. Plug HV pigtail into Lens 4 HV recepticle.\n'
-            '2. Attach positive lead of voltmeter to pigtail.\n'
-            '3. Attach common lead of voltmeter to ground.\n'
-            '4. Press one of the voltage test buttons, wait for the\n'
+            '1. Ensure interlock receptacle is jumpered.\n'
+            '2. Insert HV pigtail into Lens 4 HV receptacle.\n'
+            '3. Connect HV pigtail banana plug in voltmeter\n'
+            '4. Attach common lead of voltmeter to ground lug.\n'
+            '5. Press one of the voltage test buttons, wait for the\n'
             '     voltage to ramp up and stabilize, then record the\n'
             '     measured value in the adjacent entry box.\n'
-            '5. Repeat this for each of the six voltage settings.\n'
-            '6. When complete, press the "Disable HV" button.\n'
-            '7. Click the "Next" button to continue.\n'
+            '6. Repeat this for each of the six voltage settings.\n'
+            '7. When complete, Click the "Next" button to continue.\n'
         )
 
         title_label = QLabel('Lens 4 Test')
@@ -1249,8 +1249,8 @@ class HVPSTestWindow(QMainWindow):
         self.main_layout.addWidget(self.L4_neg_1kV_measurement, 7, 1)
         self.main_layout.addWidget(disable_hv_btn, 8, 0, 1, 2)
         self.main_layout.addLayout(self.back_next_layout, 9, 0, 1, 2)
-        self.main_layout.addWidget(vertical_line, 0, 2, 9, 1)
-        self.main_layout.addWidget(photo, 0, 3, 9, 1)
+        self.main_layout.addWidget(vertical_line, 0, 2, 10, 1)
+        self.main_layout.addWidget(photo, 0, 3, 10, 1)
 
         container = QWidget()
         container.setLayout(self.main_layout)
@@ -1265,7 +1265,7 @@ class HVPSTestWindow(QMainWindow):
         Creates the gui to test the solenoid channel
         """
         window_width = 1150
-        window_height = 600
+        window_height = 680
         self.setFixedSize(window_width, window_height)
         self.setWindowTitle('Solenoid Channel Test')
         self.channel = 'SL'
@@ -1285,8 +1285,7 @@ class HVPSTestWindow(QMainWindow):
             '     current to ramp up and stabilize, then record the\n'
             '     measured value in the adjacent entry box.\n'
             '7. Repeat this for each of the three current settings.\n'
-            '8. When complete, press the "Disable Solenoid" button.\n'
-            '9. Click the "Next" button to continue.\n'
+            '8. Click the "Next" button to continue.\n'
         )
 
         title_label = QLabel('Sol. Test')
@@ -2031,28 +2030,28 @@ class HVPSTestWindow(QMainWindow):
         self.next_btn.setFocus()
 
 
-# if __name__ == '__main__':
-#     import sys
+if __name__ == '__main__':
+    import sys
 
-#     from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
-#     from src.pdf import HVPSReport
+    from src.pdf import HVPSReport
 
-#     def create_pdf(readbacks, measurements):
-#         pdf = HVPSReport(
-#             'SN-###',
-#             ['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
-#             readbacks,
-#             measurements,
-#         )
-#         pdf.open()
+    def create_pdf(readbacks, measurements):
+        pdf = HVPSReport(
+            'SN-###',
+            ['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
+            readbacks,
+            measurements,
+        )
+        pdf.open()
 
-#     version = '1.0.0'
-#     app = QApplication([])
-#     window = HVPSTestWindow(
-#         hvps=HVPSv3(sock=None),
-#         occupied_channels=['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
-#     )
-#     window.test_complete.connect(create_pdf)
-#     window.show()
-#     sys.exit(app.exec())
+    version = '1.0.0'
+    app = QApplication([])
+    window = HVPSTestWindow(
+        hvps=HVPSv3(sock=None),
+        occupied_channels=['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
+    )
+    window.test_complete.connect(create_pdf)
+    window.show()
+    sys.exit(app.exec())
