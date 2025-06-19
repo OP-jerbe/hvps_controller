@@ -10,10 +10,7 @@ from src.gui.main_window import MainWindow
 
 """
 TODO:
-
-1) Get the actual pictures showing voltmeter setup for each test into the assets folder.
-
-2) Write the User Guide
+1) Write the User Guide
 """
 
 
