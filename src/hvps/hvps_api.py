@@ -50,14 +50,14 @@ class HVPSv3:
         if not query.endswith('\n'):
             query += '\n'
 
-        try:
-            with self.lock:
+        with self.lock:
+            try:
                 self.sock.sendall(query.encode())
                 response = self.sock.recv(1024)
-            return response.decode().strip()
+            except socket.error as e:
+                raise ConnectionError(f'Socket communication error {e}')
 
-        except socket.error as e:
-            raise ConnectionError(f'Socket communication error {e}')
+        return response.decode().strip()
 
     def set_solenoid_current(self, current: str) -> str | None:
         """
