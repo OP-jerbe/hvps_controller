@@ -1,6 +1,7 @@
 # personal
 test.py
 hvps_test_report.pdf
+pyinstaller_instructions.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
