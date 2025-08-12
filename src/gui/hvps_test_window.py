@@ -2049,7 +2049,7 @@ if __name__ == '__main__':
     version = '1.0.0'
     app = QApplication([])
     window = HVPSTestWindow(
-        hvps=HVPSv3(sock=None),
+        hvps=HVPSv3(sock=None),  # type: ignore
         occupied_channels=['BM', 'EX', 'L1', 'L2', 'L3', 'L4', 'SL'],
     )
     window.test_complete.connect(create_pdf)
