@@ -2,11 +2,16 @@ import subprocess
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Literal, Optional
+from typing import Literal
 
 from fpdf import FPDF
 
 from helpers.helpers import get_root_dir
+
+MARGIN_HEIGHT = 20.3
+FOOTER_FONT_SIZE = 8
+TABLE_TEXT_FONT_SIZE = 12
+FONT = 'Helvetica'
 
 
 class HVPSReport(FPDF):
@@ -25,7 +30,7 @@ class HVPSReport(FPDF):
         self.occupied_channels = occupied_channels
         self.readbacks = readbacks
         self.measurements = measurements
-        self.set_margin(20.3)  # set all margins to the same value
+        self.set_margin(MARGIN_HEIGHT)  # set all margins to the same value
         self.add_page()
         self.cell_widths = [30, 18, 30, 30]
         self.row_height = 5.5
@@ -43,13 +48,13 @@ class HVPSReport(FPDF):
                 h=self.t_margin / 4,
                 keep_aspect_ratio=True,
             )
-        self.set_font(family='Helvetica', style='B', size=int(self.t_margin))
+        self.set_font(family=FONT, style='B', size=int(self.t_margin))
         self.cell(
             text=f'HVPS Test Results ({self.serial_number})', align='C', center=True
         )
 
     def add_table_header(self) -> None:
-        self.set_font('Helvetica', 'B', 12)
+        self.set_font(FONT, 'B', TABLE_TEXT_FONT_SIZE)
 
         # Set the cursor 5 mm below the title bar
         self.set_xy(self.l_margin, self.t_margin + self.row_height)
@@ -59,7 +64,7 @@ class HVPSReport(FPDF):
         self.ln(self.row_height)
 
     def add_table_data(self) -> None:
-        self.set_font('Helvetica', '', 12)
+        self.set_font(FONT, '', TABLE_TEXT_FONT_SIZE)
 
         # set the cursor below the table header row
         self.set_xy(self.l_margin, self.t_margin + 2 * self.row_height)
@@ -121,9 +126,9 @@ class HVPSReport(FPDF):
                 self.set_y(y_pos)
 
     def footer(self) -> None:
-        self.set_y(-20.3 / 2)  # center the cursor within the footer height
+        self.set_y(-MARGIN_HEIGHT / 2)  # center the cursor within the footer height
         self.set_x(self.l_margin)
-        self.set_font(family='Helvetica', style='I', size=8)
+        self.set_font(family=FONT, style='I', size=FOOTER_FONT_SIZE)
         self.cell(text=f'Tested: {datetime.now():%Y-%m-%d}', align='C')
 
     def create_report(self) -> None:
