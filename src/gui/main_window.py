@@ -32,6 +32,7 @@ from helpers.helpers import close_socket, get_root_dir
 from ..hvps.hvps_api import HVPSv3
 from ..pdf import HVPSReport
 from .bg_thread import Worker
+from .change_sn_window import ChangeSNWindow
 from .channel_selection_window import ChannelSelectionWindow
 from .hvps_test_window import HVPSTestWindow
 from .open_socket_window import OpenSocketWindow
@@ -83,6 +84,7 @@ class MainWindow(QMainWindow):
         # Create the secondary windows attributes
         self.open_socket_window: Optional[OpenSocketWindow] = None
         self.hvps_test_window: Optional[HVPSTestWindow] = None
+        self.change_sn_window: Optional[ChangeSNWindow] = None
 
         # Create the attributes that will hold the voltage readback values
         self.beam_Vreadback: str = '0 V'
@@ -194,12 +196,14 @@ class MainWindow(QMainWindow):
         self.run_test_action = QAction(text='Run Test', parent=self)
         self.exit_action = QAction(text='Exit', parent=self)
         self.open_user_guide_action = QAction(text='User Guide', parent=self)
+        self.change_sn_action = QAction(text='Change SN', parent=self)
 
         # Connect the QActions to slots when triggered
         self.open_socket_window_action.triggered.connect(self.handle_open_socket_window)
         self.run_test_action.triggered.connect(self.handle_run_test)
         self.exit_action.triggered.connect(self.handle_exit)
         self.open_user_guide_action.triggered.connect(self.open_user_guide)
+        self.change_sn_action.triggered.connect(self.handle_open_change_sn_window)
 
         # Create the menu bar and menu bar selections
         self.menu_bar = self.menuBar()
@@ -208,6 +212,7 @@ class MainWindow(QMainWindow):
 
         # Add the QActions to the menu bar options
         self.file_menu.addAction(self.open_socket_window_action)
+        self.file_menu.addAction(self.change_sn_action)
         self.file_menu.addAction(self.run_test_action)
         self.file_menu.addAction(self.exit_action)
         self.help_menu.addAction(self.open_user_guide_action)
@@ -497,6 +502,22 @@ class MainWindow(QMainWindow):
             self.open_socket_window.show()
             self.open_socket_window.activateWindow()  # gives the window focus
             self.open_socket_window.raise_()  # ensures window is visually on top of other windows
+
+    def handle_open_change_sn_window(self) -> None:
+        if self.change_sn_window is None:
+            self.change_sn_window = ChangeSNWindow(
+                current_sn=self.serial_number, parent=self
+            )
+            self.change_sn_window.SN_changed.connect(self.get_serial_number)
+            self.change_sn_window.window_closed.connect(
+                self.handle_change_sn_window_closed
+            )
+            self.change_sn_window.show()
+            self.change_sn_window.activateWindow()
+            self.change_sn_window.raise_()
+
+    def handle_change_sn_window_closed(self) -> None:
+        self.change_sn_window = None
 
     def get_socket(self, sock: SocketType) -> None:
         """
